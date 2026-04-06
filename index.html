@@ -272,17 +272,21 @@ input[type=range].vol-slider::-moz-range-thumb {
 <audio id="audio" preload="none"></audio>
 <script>
 const STATIONS = [
-  { name:'Нафталин FM',        nameH:'<em>Нафталин</em> FM',        desc:'Советская эстрада · Radio Record',    tag:'СССР',   q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/naft96.aacp' },
-  { name:'Дискотека СССР',     nameH:'<em>Дискотека</em> СССР',      desc:'Музыка советских дискотек · 101.ru',  tag:'СССР',   q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/144' },
-  { name:'Ретро Хит',          nameH:'<em>Ретро</em> Хит',           desc:'Ретро-хиты · AMG Radio',              tag:'Ретро',  q:'MP3',           url:'http://air.volna.top/Retro', httpOnly:true },
-  { name:'Супердискотека 90-х',nameH:'Супердискотека <em>90-х</em>', desc:'Лучшие хиты девяностых · Radio Record',tag:'90-е',  q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/sd9096.aacp' },
-  { name:'Record 80-х',        nameH:'Record <em>80-х</em>',         desc:'Восьмидесятые · Radio Record',         tag:'80-е',  q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/198096.aacp' },
-  { name:'Eurodance',          nameH:'<em>Euro</em>dance',           desc:'Классический еврoданс · Radio Record', tag:'Dance',  q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/eurodance96.aacp' },
-  { name:'Synthwave',          nameH:'<em>Synth</em>wave',           desc:'Ретрофутуристический · Radio Record',  tag:'Synth',  q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/synth96.aacp' },
-  { name:'Медляк FM',          nameH:'<em>Медляк</em> FM',           desc:'Медленные хиты · Radio Record',        tag:'Медляк', q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/mdl96.aacp' },
-  { name:'Russian Mix',        nameH:'Russian <em>Mix</em>',         desc:'Русская поп-музыка · Radio Record',    tag:'RU',     q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/rus96.aacp' },
-  { name:'Chill-Out',          nameH:'<em>Chill</em>-Out',           desc:'Атмосферная музыка · Radio Record',    tag:'Chill',  q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/chil96.aacp' },
-  { name:'Симфония FM',        nameH:'<em>Симфония</em> FM',         desc:'Классическая музыка · Radio Record',   tag:'Классика',q:'AAC · 96 kbps',url:'https://radiorecord.hostingradio.ru/symph96.aacp' },
+  { name:'Нафталин FM',        nameH:'<em>Нафталин</em> FM',        desc:'Советская эстрада · Radio Record',     tag:'СССР',    q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/naft96.aacp' },
+  { name:'Дискотека СССР',     nameH:'<em>Дискотека</em> СССР',      desc:'Музыка советских дискотек · 101.ru',   tag:'СССР',    q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/144' },
+  { name:'СССР 50–70',    nameH:'<em>СССР</em> 50–70',     desc:'Советская эстрада 50-70-х · 101.ru',   tag:'СССР',    q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/47' },
+  { name:'ВИА', nameH:'<em>ВИА</em>',  desc:'Вокально-инструментальные ансамбли · 101.ru', tag:'СССР', q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/36' },
+  { name:'Ретро Хит',          nameH:'<em>Ретро</em> Хит',           desc:'Ретро-хиты · AMG Radio',               tag:'Ретро',   q:'MP3',           url:'http://air.volna.top/Retro', httpOnly:true },
+  { name:'Дискотека 80-х',     nameH:'<em>Дискотека</em> 80-х',      desc:'Хиты восьмидесятых · 101.ru',          tag:'80-е',    q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/1' },
+  { name:'Record 80-х',        nameH:'Record <em>80-х</em>',         desc:'Восьмидесятые · Radio Record',          tag:'80-е',    q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/198096.aacp' },
+  { name:'Italo Disco',        nameH:'<em>Italo</em> Disco',         desc:'Итало-диско · 101.ru',                  tag:'Disco',   q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/161' },
+  { name:'Россия 90-х',        nameH:'Россия <em>90-х</em>',         desc:'Российские хиты девяностых · 101.ru',  tag:'90-е',    q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/33' },
+  { name:'Супердискотека 90-х',nameH:'Супердискотека <em>90-х</em>', desc:'Лучшие хиты девяностых · Radio Record', tag:'90-е',   q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/sd9096.aacp' },
+  { name:'Eurodance',          nameH:'<em>Euro</em>dance',           desc:'Классический еврoданс · Radio Record',  tag:'Dance',   q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/eurodance96.aacp' },
+  { name:'Русский рок',        nameH:'<em>Русский</em> рок',         desc:'Российский рок · 101.ru',               tag:'Рок',     q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/42' },
+  { name:'Король и Шут',       nameH:'<em>Король</em> и Шут',        desc:'Король и Шут · 101.ru',                 tag:'Рок',     q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/191' },
+  { name:'Медляк FM',          nameH:'<em>Медляк</em> FM',           desc:'Медленные хиты · Radio Record',         tag:'Медляк',  q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/mdl96.aacp' },
+  { name:'Симфония FM',        nameH:'<em>Симфония</em> FM',         desc:'Классическая музыка · Radio Record',    tag:'Классика',q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/symph96.aacp' },
 ];
 
 let cur=0, playing=false, loading=false;
