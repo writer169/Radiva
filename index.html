@@ -192,6 +192,12 @@ input[type=range].vol-slider::-moz-range-thumb {
 }
 .url-btn:hover { border-color: var(--text); background: var(--bg); }
 .err { font-size: 11px; color: var(--accent); margin-top: 6px; min-height: 16px; }
+.http-warn {
+  font-size: 11px; color: #92631a; margin-top: 6px;
+  background: #fef9ec; border: 1px solid #f5dfa0;
+  border-radius: 8px; padding: 7px 10px; display: none; line-height: 1.5;
+}
+.http-warn.show { display: block; }
 
 /* FOOTER */
 .footer {
@@ -254,6 +260,7 @@ input[type=range].vol-slider::-moz-range-thumb {
       <button class="url-btn" id="urlBtn">Играть</button>
     </div>
     <div class="err" id="errMsg"></div>
+    <div class="http-warn" id="httpWarn">⚠ Эта станция использует <b>http://</b> — браузеры могут блокировать её из соображений безопасности. Если не воспроизводится, сохраните файл локально и откройте через <b>file://</b>.</div>
   </div>
 
   <div class="footer">
@@ -267,7 +274,7 @@ input[type=range].vol-slider::-moz-range-thumb {
 const STATIONS = [
   { name:'Нафталин FM',        nameH:'<em>Нафталин</em> FM',        desc:'Советская эстрада · Radio Record',    tag:'СССР',   q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/naft96.aacp' },
   { name:'Дискотека СССР',     nameH:'<em>Дискотека</em> СССР',      desc:'Музыка советских дискотек · 101.ru',  tag:'СССР',   q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/144' },
-  { name:'Ретро Хит',          nameH:'<em>Ретро</em> Хит',           desc:'Ретро-хиты · Volna',                  tag:'Ретро',  q:'MP3',           url:'http://retro.volna.top/Retro' },
+  { name:'Ретро Хит',          nameH:'<em>Ретро</em> Хит',           desc:'Ретро-хиты · AMG Radio',              tag:'Ретро',  q:'MP3',           url:'http://air.volna.top/Retro', httpOnly:true },
   { name:'Супердискотека 90-х',nameH:'Супердискотека <em>90-х</em>', desc:'Лучшие хиты девяностых · Radio Record',tag:'90-е',  q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/sd9096.aacp' },
   { name:'Record 80-х',        nameH:'Record <em>80-х</em>',         desc:'Восьмидесятые · Radio Record',         tag:'80-е',  q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/198096.aacp' },
   { name:'Eurodance',          nameH:'<em>Euro</em>dance',           desc:'Классический еврoданс · Radio Record', tag:'Dance',  q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/eurodance96.aacp' },
@@ -301,6 +308,7 @@ const stToggle  = document.getElementById('stToggle');
 const stArrow   = document.getElementById('stArrow');
 const stPanel   = document.getElementById('stPanel');
 const footerQ   = document.getElementById('footerQ');
+const httpWarn  = document.getElementById('httpWarn');
 
 // Clock
 setInterval(()=>{ clockEl.textContent=new Date().toLocaleTimeString('ru-RU'); },1000);
@@ -345,6 +353,7 @@ function switchStation(i){
   errMsg.textContent='';
   npTitle.textContent='Нажмите ▶ для воспроизведения';
   npSub.textContent='—';
+  httpWarn.classList.toggle('show', !!s.httpOnly);
   buildList();
 }
 
