@@ -2,448 +2,461 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Radio Player</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Радиоприемник</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Overpass+Mono:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #f4f1ec;
-  --card: #ffffff;
-  --border: #e8e3da;
-  --border2: #d4cdc1;
-  --text: #1a1714;
-  --sub: #8a8178;
-  --accent: #c0392b;
-  --accent-lt: #f9eeec;
-  --sans: 'DM Sans', sans-serif;
-  --serif: 'DM Serif Display', serif;
+  --bg: #0c0b09;
+  --surface: #161410;
+  --card: #1c1a15;
+  --card-hover: #232019;
+  --accent: #c8973a;
+  --accent2: #f0c050;
+  --red: #d04040;
+  --text: #f0e8d0;
+  --sub: #b8aa90;
+  --muted: #706050;
+  --border: #2c2820;
+  --active-bg: #281e0e;
+  --active-border: #c8973a;
+  --fav-color: #ff4081;
 }
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
 body {
+  font-family: 'Overpass Mono', monospace;
   background: var(--bg);
-  font-family: var(--sans);
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
-  background-image:
-    radial-gradient(ellipse 60% 50% at 20% 20%, rgba(192,57,43,0.06) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 60% at 80% 80%, rgba(37,99,235,0.05) 0%, transparent 70%);
-}
-.card {
-  width: 400px;
-  background: var(--card);
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 12px 40px rgba(0,0,0,0.08);
-  border: 1px solid var(--border);
-  overflow: hidden;
-  animation: rise 0.55s cubic-bezier(0.16,1,0.3,1) both;
-}
-@keyframes rise {
-  from { opacity:0; transform:translateY(20px) scale(0.98); }
-  to   { opacity:1; transform:translateY(0) scale(1); }
+  color: var(--text);
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  overflow-x: hidden;
 }
 
-/* HERO */
-.hero {
-  padding: 28px 28px 22px;
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 999;
+}
+
+.app { width: 100%; max-width: 420px; padding-bottom: 48px; }
+
+/* ══ ШАПКА ══ */
+.header {
+  padding: 24px 20px 18px;
   border-bottom: 1px solid var(--border);
-  background: linear-gradient(135deg, #fff8f7 0%, #fff 60%, #f0f4ff 100%);
-}
-.badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--sub); margin-bottom: 10px;
-}
-.badge-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--sub); transition: background 0.3s;
-}
-.badge-dot.live { background: var(--accent); animation: pulse 1.3s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
-.station-name {
-  font-family: var(--serif);
-  font-size: 36px; line-height: 1.1; color: var(--text); margin-bottom: 6px;
-}
-.station-name em { font-style: italic; color: var(--accent); }
-.station-desc { font-size: 13px; color: var(--sub); }
-
-/* VIZ */
-.viz {
-  padding: 0 28px; height: 60px;
-  display: flex; align-items: center; gap: 2.5px;
-  background: #fafaf9; border-bottom: 1px solid var(--border);
-}
-.vbar {
-  flex: 1; background: var(--accent); border-radius: 2px;
-  height: 3px; opacity: 0.2;
-  animation: vb var(--d,.7s) ease-in-out infinite alternate;
-  animation-play-state: paused;
-  transition: height .4s, opacity .4s;
-}
-.viz.on .vbar { animation-play-state: running; height: var(--h,12px); opacity: 0.55; }
-@keyframes vb { from{transform:scaleY(.15)} to{transform:scaleY(1)} }
-
-/* NOW PLAYING */
-.now-playing {
-  padding: 14px 28px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 14px; min-height: 62px;
-}
-.np-icon {
-  width: 38px; height: 38px; flex-shrink: 0; border-radius: 10px;
-  background: var(--accent-lt); display: flex; align-items: center; justify-content: center;
-  color: var(--accent);
-}
-.np-icon svg { width: 18px; height: 18px; }
-.np-icon.spin svg { animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.np-text { flex: 1; min-width: 0; }
-.np-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--sub); margin-bottom: 2px; }
-.np-title { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.np-sub   { font-size: 11px; color: var(--sub); margin-top: 1px; }
-
-/* CONTROLS */
-.controls {
-  padding: 20px 28px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 16px;
-}
-.play-btn {
-  width: 52px; height: 52px; flex-shrink: 0; border-radius: 14px;
-  background: var(--text); border: none; color: #fff; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background .18s, transform .1s, box-shadow .18s;
-  box-shadow: 0 2px 8px rgba(26,23,20,.18);
-}
-.play-btn:hover { background: var(--accent); box-shadow: 0 4px 16px rgba(192,57,43,.3); transform: translateY(-1px); }
-.play-btn:active { transform: scale(.94); }
-.play-btn.on { background: var(--accent); box-shadow: 0 4px 16px rgba(192,57,43,.3); }
-.play-btn svg { width: 20px; height: 20px; }
-
-.vol-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-.vol-top { display: flex; justify-content: space-between; }
-.vol-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); }
-.vol-pct   { font-size: 11px; font-weight: 500; color: var(--text); }
-.vol-track { position: relative; height: 4px; background: var(--border); border-radius: 4px; }
-.vol-fill  { position: absolute; inset: 0; right: auto; background: var(--text); border-radius: 4px; width: 80%; transition: width .05s; }
-input[type=range].vol-slider {
-  position: absolute; inset: -8px 0; width: 100%; height: calc(100% + 16px);
-  -webkit-appearance: none; appearance: none; background: transparent; outline: none; cursor: pointer;
-}
-input[type=range].vol-slider::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 14px; height: 14px;
-  background: var(--card); border: 2px solid var(--text); border-radius: 50%;
-  box-shadow: 0 1px 4px rgba(0,0,0,.15); transition: border-color .15s, transform .15s;
-}
-input[type=range].vol-slider:hover::-webkit-slider-thumb { border-color: var(--accent); transform: scale(1.15); }
-input[type=range].vol-slider::-moz-range-thumb {
-  width: 14px; height: 14px; background: var(--card);
-  border: 2px solid var(--text); border-radius: 50%;
 }
 
-/* STATIONS */
-.stations-wrap { border-bottom: 1px solid var(--border); }
-.st-toggle {
-  width: 100%; background: none; border: none; padding: 12px 28px;
-  display: flex; align-items: center; justify-content: space-between;
-  cursor: pointer; font-family: var(--sans);
-  font-size: 10px; font-weight: 600; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--sub); transition: color .15s;
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
 }
-.st-toggle:hover { color: var(--text); }
-.st-arrow { transition: transform .25s; }
-.st-arrow.open { transform: rotate(180deg); }
-.st-panel { max-height: 0; overflow: hidden; transition: max-height .35s cubic-bezier(.4,0,.2,1); }
-.st-panel.open { max-height: 300px; overflow-y: auto; }
-.st-panel::-webkit-scrollbar { width: 4px; }
-.st-panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-.st-row {
-  display: flex; align-items: center; gap: 12px; padding: 10px 28px;
-  border-top: 1px solid var(--border); cursor: pointer; transition: background .12s;
-}
-.st-row:hover { background: #faf9f7; }
-.st-row.active { background: var(--accent-lt); }
-.st-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); flex-shrink: 0; transition: background .2s; }
-.st-row.active .st-dot { background: var(--accent); }
-.st-info { flex: 1; min-width: 0; }
-.st-name { font-size: 13px; font-weight: 500; color: var(--text); }
-.st-row.active .st-name { color: var(--accent); }
-.st-sub  { font-size: 11px; color: var(--sub); margin-top: 1px; }
-.st-tag {
-  font-size: 9px; font-weight: 600; letter-spacing: .07em; padding: 2px 7px;
-  border-radius: 20px; background: var(--border); color: var(--sub);
-  text-transform: uppercase; flex-shrink: 0;
-}
-.st-row.active .st-tag { background: rgba(192,57,43,.12); color: var(--accent); }
 
-/* URL */
-.url-section { padding: 16px 28px; border-bottom: 1px solid var(--border); }
-.url-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--sub); margin-bottom: 8px; }
-.url-row { display: flex; gap: 8px; }
-.url-input {
-  flex: 1; min-width: 0; font-family: var(--sans); font-size: 11px;
-  padding: 9px 12px; border: 1.5px solid var(--border2); border-radius: 10px;
-  background: var(--bg); color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s;
+.logo {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.35em;
+  color: var(--sub);
+  text-transform: uppercase;
 }
-.url-input:focus { border-color: var(--text); box-shadow: 0 0 0 3px rgba(26,23,20,.06); }
-.url-btn {
-  padding: 9px 16px; border-radius: 10px; border: 1.5px solid var(--border2);
-  background: var(--card); font-family: var(--sans); font-size: 11px; font-weight: 600;
-  color: var(--text); cursor: pointer; transition: border-color .15s, background .15s; flex-shrink: 0;
-}
-.url-btn:hover { border-color: var(--text); background: var(--bg); }
-.err { font-size: 11px; color: var(--accent); margin-top: 6px; min-height: 16px; }
-.http-warn {
-  font-size: 11px; color: #92631a; margin-top: 6px;
-  background: #fef9ec; border: 1px solid #f5dfa0;
-  border-radius: 8px; padding: 7px 10px; display: none; line-height: 1.5;
-}
-.http-warn.show { display: block; }
 
-/* FOOTER */
-.footer {
-  padding: 12px 28px; display: flex; align-items: center; justify-content: space-between;
+.freq-badge {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent2);
+  background: rgba(200,151,58,0.12);
+  border: 1px solid rgba(200,151,58,0.3);
+  padding: 5px 10px;
+  border-radius: 4px;
+  min-width: 90px;
+  text-align: center;
 }
-.footer-q { font-size: 11px; color: var(--sub); }
-.footer-clock { font-size: 13px; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
+
+.np-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--sub);
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+
+.np-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  min-height: 22px;
+  transition: color 0.3s;
+}
+.np-title.active { color: var(--accent2); }
+
+/* ══ ДЕКА ══ */
+.deck {
+  margin-top: 18px;
+  background: #2a2318;
+  border: 1px solid #4a4030;
+  border-radius: 12px;
+  padding: 16px 18px 14px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.deck::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, #3a3020 15%, #c8973a 30%, #f0c050 50%, #c8973a 70%, #3a3020 85%, transparent 100%);
+  opacity: 0.6;
+}
+
+.reels { display: flex; gap: 14px; flex-shrink: 0; position: relative; align-items: center; }
+.reel { width: 52px; height: 52px; position: relative; }
+.reel svg { width: 100%; height: 100%; }
+.reel-hub { transform-origin: 50% 50%; }
+
+.playing-state .reel-hub { animation: spinReel 2.4s linear infinite; }
+.playing-state .reel-hub.slow { animation-duration: 3.8s; }
+@keyframes spinReel { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.tape-line { width: 14px; height: 4px; background: #3a2e10; border-top: 1px solid #c8973a55; border-bottom: 1px solid #c8973a55; overflow: hidden; flex-shrink: 0; position: relative; }
+.tape-stripe { position: absolute; top: 0; left: -100%; width: 200%; height: 100%; background: repeating-linear-gradient(90deg, #3a2e10 0px, #3a2e10 4px, #6b5020 4px, #6b5020 6px); opacity: 0; transition: opacity 0.3s; }
+.playing-state .tape-stripe { opacity: 1; animation: tapeMove 0.6s linear infinite; }
+@keyframes tapeMove { from { transform: translateX(0); } to { transform: translateX(50%); } }
+
+.vu { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.vu-row { display: flex; align-items: center; gap: 6px; }
+.vu-label { font-family: 'Unbounded', monospace; font-size: 8px; font-weight: 700; color: var(--muted); width: 10px; }
+.vu-track { flex: 1; height: 9px; background: #0c0a07; border-radius: 2px; overflow: hidden; border: 1px solid #1e1c14; display: flex; gap: 2px; padding: 1px 2px; }
+.vu-seg { flex: 1; border-radius: 1px; background: transparent; transition: background 0.05s; }
+
+.deck-status { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+.status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); transition: all 0.3s; }
+.playing-state .status-dot { background: var(--red); box-shadow: 0 0 7px var(--red); animation: blinkDot 1.1s ease-in-out infinite; }
+@keyframes blinkDot { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+.status-text { font-family: 'Unbounded', sans-serif; font-size: 7px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.playing-state .status-text { color: var(--accent); }
+
+/* ══ УПРАВЛЕНИЕ ══ */
+.controls { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.btn-play { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px 20px; background: var(--accent); border: none; border-radius: 10px; color: #0c0b09; font-family: 'Unbounded', sans-serif; font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+.btn-play:active { transform: scale(0.96); }
+.btn-play.playing { background: var(--red); color: #fff; }
+.btn-skip { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: var(--card); border: 1px solid var(--border); border-radius: 10px; color: var(--sub); cursor: pointer; transition: all 0.15s; }
+
+/* ══ СПИСОК СТАНЦИЙ ══ */
+.section-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 11px; }
+.section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.25em; color: var(--sub); text-transform: uppercase; }
+.stations-list { padding: 0 20px; display: flex; flex-direction: column; gap: 8px; }
+
+.station-item {
+  display: flex;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.18s;
+  user-select: none;
+}
+.station-item:active { transform: scale(0.98); }
+.station-item.active { background: var(--active-bg); border-color: var(--active-border); }
+
+.station-num { width: 42px; text-align: center; font-family: 'Unbounded', monospace; font-size: 10px; font-weight: 700; color: var(--muted); border-right: 1px solid var(--border); padding: 20px 0; }
+.station-item.active .station-num { color: var(--accent); }
+
+.station-info { flex: 1; padding: 14px 16px; min-width: 0; }
+.station-name { font-size: 16px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+.station-item.active .station-name { color: var(--accent2); }
+
+.btn-fav {
+  background: none; border: none; color: var(--muted); padding: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
+}
+.btn-fav.active { color: var(--fav-color); filter: drop-shadow(0 0 4px rgba(255,64,129,0.3)); }
+
+.btn-delete { width: 40px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; border-left: 1px solid var(--border); color: var(--muted); font-size: 18px; cursor: pointer; }
+
+/* ══ МОДАЛЬНОЕ ОКНО ══ */
+.modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+.modal-backdrop.open { display: flex; }
+.modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 22px 20px 40px; width: 100%; max-width: 420px; animation: slideUp 0.3s ease-out; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.field { margin-bottom: 15px; }
+.field label { display: block; font-size: 10px; color: var(--sub); text-transform: uppercase; margin-bottom: 8px; }
+.field input { width: 100%; padding: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: #fff; font-family: inherit; outline: none; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn-confirm { flex: 1; padding: 14px; background: var(--accent); border: none; border-radius: 8px; font-weight: 900; cursor: pointer; }
+.btn-cancel { flex: 1; padding: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--sub); cursor: pointer; }
 </style>
 </head>
 <body>
-<div class="card">
 
-  <div class="hero">
-    <div class="badge"><div class="badge-dot" id="dot"></div><span id="badgeTxt">Интернет-радио</span></div>
-    <div class="station-name" id="heroName"><em>Нафталин</em> FM</div>
-    <div class="station-desc" id="heroDesc">Советская эстрада и ретро-хиты · Radio Record</div>
-  </div>
-
-  <div class="viz" id="viz"></div>
-
-  <div class="now-playing">
-    <div class="np-icon" id="npIcon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">Интернет Радио</div>
+      <div class="freq-badge" id="freqBadge">---</div>
     </div>
-    <div class="np-text">
-      <div class="np-label">В эфире</div>
-      <div class="np-title" id="npTitle">Нажмите ▶ для воспроизведения</div>
-      <div class="np-sub"   id="npSub">—</div>
+    <div class="np-label">В эфире</div>
+    <div class="np-title" id="npTitle">—</div>
+
+    <div class="deck" id="deck">
+      <div class="reels">
+        <div class="reel">
+          <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#1a1508" stroke="#c8973a" stroke-width="1.2"/><g class="reel-hub"><circle cx="26" cy="26" r="10" fill="#2e2810" stroke="#c8973a"/><line x1="26" y1="26" x2="26" y2="16.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="34.6" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="17.4" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/></g></svg>
+        </div>
+        <div class="tape-line"><div class="tape-stripe"></div></div>
+        <div class="reel">
+          <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#1a1508" stroke="#c8973a" stroke-width="1.2"/><g class="reel-hub slow"><circle cx="26" cy="26" r="10" fill="#2e2810" stroke="#c8973a"/><line x1="26" y1="26" x2="26" y2="16.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="34.6" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="17.4" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/></g></svg>
+        </div>
+      </div>
+      <div class="vu">
+        <div class="vu-row"><div class="vu-label">L</div><div class="vu-track" id="vuL"></div></div>
+        <div class="vu-row"><div class="vu-label">R</div><div class="vu-track" id="vuR"></div></div>
+      </div>
+      <div class="deck-status"><div class="status-dot"></div><div class="status-text" id="statusText">СТОП</div></div>
     </div>
   </div>
 
   <div class="controls">
-    <button class="play-btn" id="playBtn">
-      <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
-    </button>
-    <div class="vol-wrap">
-      <div class="vol-top">
-        <span class="vol-label">Громкость</span>
-        <span class="vol-pct" id="volPct">80%</span>
-      </div>
-      <div class="vol-track">
-        <div class="vol-fill" id="volFill"></div>
-        <input type="range" class="vol-slider" id="volSlider" min="0" max="100" value="80">
-      </div>
-    </div>
+    <button class="btn-skip" id="btnPrev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+    <button class="btn-play" id="btnPlay"><svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span id="playLabel">ЭФИР</span></button>
+    <button class="btn-skip" id="btnNext"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
   </div>
 
-  <div class="stations-wrap">
-    <button class="st-toggle" id="stToggle">
-      <span>Список станций</span>
-      <svg class="st-arrow" id="stArrow" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4l4 4 4-4"/></svg>
-    </button>
-    <div class="st-panel" id="stPanel"></div>
-  </div>
-
-  <div class="url-section">
-    <div class="url-label">Stream URL</div>
-    <div class="url-row">
-      <input type="text" class="url-input" id="urlInput" placeholder="https://...">
-      <button class="url-btn" id="urlBtn">Играть</button>
-    </div>
-    <div class="err" id="errMsg"></div>
-    <div class="http-warn" id="httpWarn">⚠ Эта станция использует <b>http://</b> — браузеры могут блокировать её из соображений безопасности. Если не воспроизводится, сохраните файл локально и откройте через <b>file://</b>.</div>
-  </div>
-
-  <div class="footer">
-    <span class="footer-q" id="footerQ">AAC · 96 kbps</span>
-    <span class="footer-clock" id="clock">--:--:--</span>
-  </div>
-
+  <div class="section-header"><span class="section-label">Станции</span><button class="btn-add" id="btnAdd" style="background:var(--card); border:1px solid var(--border); padding:6px 12px; border-radius:6px; color:var(--sub); cursor:pointer;">+ Добавить</button></div>
+  <div class="stations-list" id="stationsList"></div>
 </div>
-<audio id="audio" preload="none"></audio>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="field"><label>Название</label><input type="text" id="inputName" placeholder="Моя станция"></div>
+    <div class="field"><label>URL потока</label><input type="url" id="inputUrl" placeholder="https://..."></div>
+    <div class="modal-actions"><button class="btn-cancel" id="btnCancel">Отмена</button><button class="btn-confirm" id="btnConfirm">Добавить</button></div>
+  </div>
+</div>
+
+<audio id="audio" crossorigin="anonymous"></audio>
+
 <script>
-const STATIONS = [
-  { name:'Нафталин FM',        nameH:'<em>Нафталин</em> FM',        desc:'Советская эстрада · Radio Record',     tag:'СССР',    q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/naft96.aacp' },
-  { name:'Дискотека СССР',     nameH:'<em>Дискотека</em> СССР',      desc:'Музыка советских дискотек · 101.ru',   tag:'СССР',    q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/144' },
-  { name:'СССР 50–70',    nameH:'<em>СССР</em> 50–70',     desc:'Советская эстрада 50-70-х · 101.ru',   tag:'СССР',    q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/47' },
-  { name:'ВИА', nameH:'<em>ВИА</em>',  desc:'Вокально-инструментальные ансамбли · 101.ru', tag:'СССР', q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/36' },
-  { name:'Ретро Хит',          nameH:'<em>Ретро</em> Хит',           desc:'Ретро-хиты · AMG Radio',               tag:'Ретро',   q:'MP3',           url:'http://air.volna.top/Retro', httpOnly:true },
-  { name:'Дискотека 80-х',     nameH:'<em>Дискотека</em> 80-х',      desc:'Хиты восьмидесятых · 101.ru',          tag:'80-е',    q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/1' },
-  { name:'Record 80-х',        nameH:'Record <em>80-х</em>',         desc:'Восьмидесятые · Radio Record',          tag:'80-е',    q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/198096.aacp' },
-  { name:'Italo Disco',        nameH:'<em>Italo</em> Disco',         desc:'Итало-диско · 101.ru',                  tag:'Disco',   q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/161' },
-  { name:'Россия 90-х',        nameH:'Россия <em>90-х</em>',         desc:'Российские хиты девяностых · 101.ru',  tag:'90-е',    q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/33' },
-  { name:'Супердискотека 90-х',nameH:'Супердискотека <em>90-х</em>', desc:'Лучшие хиты девяностых · Radio Record', tag:'90-е',   q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/sd9096.aacp' },
-  { name:'Eurodance',          nameH:'<em>Euro</em>dance',           desc:'Классический еврoданс · Radio Record',  tag:'Dance',   q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/eurodance96.aacp' },
-  { name:'Русский рок',        nameH:'<em>Русский</em> рок',         desc:'Российский рок · 101.ru',               tag:'Рок',     q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/42' },
-  { name:'Король и Шут',       nameH:'<em>Король</em> и Шут',        desc:'Король и Шут · 101.ru',                 tag:'Рок',     q:'AAC · 64 kbps', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/191' },
-  { name:'Медляк FM',          nameH:'<em>Медляк</em> FM',           desc:'Медленные хиты · Radio Record',         tag:'Медляк',  q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/mdl96.aacp' },
-  { name:'Симфония FM',        nameH:'<em>Симфония</em> FM',         desc:'Классическая музыка · Radio Record',    tag:'Классика',q:'AAC · 96 kbps', url:'https://radiorecord.hostingradio.ru/symph96.aacp' },
-  { name:'Советская эстрада',  nameH:'<em>Советская</em> эстрада',   desc:'Советская эстрада · EvCast',            tag:'СССР',    q:'MP3',           url:'https://evcast.mediacp.eu:2075/stream' },
-  { name:'СССР',               nameH:'<em>Радио</em> СССР',          desc:'Музыка советской эпохи · MyRadio24',    tag:'СССР',    q:'MP3',           url:'https://myradio24.org/ussr' },
-  { name:'Всесоюзное',         nameH:'<em>Всесоюзное</em>',          desc:'Советская музыка · Radio Kolibri',      tag:'СССР',    q:'MP3',           url:'https://radio-kolibri.ru:1045/stream' },
-  { name:'Родные Песни',       nameH:'<em>Родные</em> Песни',        desc:'Любимые отечественные хиты · AMG Radio',tag:'РУ',      q:'MP3',           url:'https://rodpesni.amgradio.ru/rp' },
-  { name:'Русское Кино',       nameH:'<em>Русское</em> Кино',        desc:'Музыка из отечественных фильмов · RR',  tag:'Кино',    q:'AAC · 96 kbps', url:'https://rr-russkoekino.hostingradio.ru/russkoekino96.aacp' },
-  { name:'Забытая кассета',    nameH:'<em>Забытая</em> кассета',     desc:'Ретро из кассет · Casseta Disco',       tag:'Ретро',   q:'MP3',           url:'https://casseta-disco.ru:6270/stream' },
-  { name:'Monte Carlo',        nameH:'<em>Monte</em> Carlo',         desc:'Стиль и элегантность · Monte Carlo',    tag:'Pop',     q:'MP3 · 128 kbps',url:'https://montecarlo.hostingradio.ru/montecarlo128.mp3' },
+const DEFAULT_STATIONS = [
+  {name:'Нафталин FM', url:'https://radiorecord.hostingradio.ru/naft96.aacp', fmt:'96k AAC'},
+  {name:'Дискотека СССР', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/144', fmt:'64k AAC'},
+  {name:'СССР 50–70', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/47', fmt:'64k AAC'},
+  {name:'ВИА', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/36', fmt:'64k AAC'},
+  {name:'Ретро Хит', url:'http://air.volna.top/Retro', fmt:'128k MP3'},
+  {name:'Дискотека 80-х', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/1', fmt:'64k AAC'},
+  {name:'Record 80-х', url:'https://radiorecord.hostingradio.ru/198096.aacp', fmt:'96k AAC'},
+  {name:'Italo Disco', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/161', fmt:'64k AAC'},
+  {name:'Россия 90-х', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/33', fmt:'64k AAC'},
+  {name:'Супердискотека 90-х', url:'https://radiorecord.hostingradio.ru/sd9096.aacp', fmt:'96k AAC'},
+  {name:'Eurodance', url:'https://radiorecord.hostingradio.ru/eurodance96.aacp', fmt:'96k AAC'},
+  {name:'Русский рок', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/42', fmt:'64k AAC'},
+  {name:'Король и Шут', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/191', fmt:'64k AAC'},
+  {name:'Медляк FM', url:'https://radiorecord.hostingradio.ru/mdl96.aacp', fmt:'96k AAC'},
+  {name:'Симфония FM', url:'https://radiorecord.hostingradio.ru/symph96.aacp', fmt:'96k AAC'},
+  {name:'Советская эстрада', url:'https://evcast.mediacp.eu:2075/stream', fmt:'128k MP3'},
+  {name:'СССР', url:'https://myradio24.org/ussr', fmt:'128k MP3'},
+  {name:'Всесоюзное', url:'https://radio-kolibri.ru:1045/stream', fmt:'128k MP3'},
+  {name:'Родные Песни', url:'https://rodpesni.amgradio.ru/rp', fmt:'128k MP3'},
+  {name:'Русское Кино', url:'https://rr-russkoekino.hostingradio.ru/russkoekino96.aacp', fmt:'96k AAC'},
+  {name:'Забытая кассета', url:'https://casseta-disco.ru:6270/stream', fmt:'128k MP3'},
+  {name:'Monte Carlo', url:'https://montecarlo.hostingradio.ru/montecarlo128.mp3', fmt:'128k MP3'},
 ];
 
-let cur=0, playing=false, loading=false;
+let favorites = JSON.parse(localStorage.getItem('favList') || '[]');
+let custom = JSON.parse(localStorage.getItem('customStations') || '[]');
+let playing = false;
+let currentUrl = localStorage.getItem('lastStationUrl') || DEFAULT_STATIONS[0].url;
 
-const audio     = document.getElementById('audio');
-const playBtn   = document.getElementById('playBtn');
-const viz       = document.getElementById('viz');
-const npTitle   = document.getElementById('npTitle');
-const npSub     = document.getElementById('npSub');
-const npIcon    = document.getElementById('npIcon');
-const dot       = document.getElementById('dot');
-const badgeTxt  = document.getElementById('badgeTxt');
-const heroName  = document.getElementById('heroName');
-const heroDesc  = document.getElementById('heroDesc');
-const volSlider = document.getElementById('volSlider');
-const volFill   = document.getElementById('volFill');
-const volPct    = document.getElementById('volPct');
-const urlInput  = document.getElementById('urlInput');
-const urlBtn    = document.getElementById('urlBtn');
-const errMsg    = document.getElementById('errMsg');
-const clockEl   = document.getElementById('clock');
-const stToggle  = document.getElementById('stToggle');
-const stArrow   = document.getElementById('stArrow');
-const stPanel   = document.getElementById('stPanel');
-const footerQ   = document.getElementById('footerQ');
-const httpWarn  = document.getElementById('httpWarn');
+const audio = document.getElementById('audio');
+const listEl = document.getElementById('stationsList');
+const npTitle = document.getElementById('npTitle');
+const freqBadge = document.getElementById('freqBadge');
+const deck = document.getElementById('deck');
+const statusText = document.getElementById('statusText');
+const btnPlay = document.getElementById('btnPlay');
+const playIcon = document.getElementById('playIcon');
+const playLabel = document.getElementById('playLabel');
 
-// Clock
-setInterval(()=>{ clockEl.textContent=new Date().toLocaleTimeString('ru-RU'); },1000);
-clockEl.textContent=new Date().toLocaleTimeString('ru-RU');
-
-// Bars
-for(let i=0;i<44;i++){
-  const b=document.createElement('div'); b.className='vbar';
-  b.style.setProperty('--h',(5+Math.random()*28)+'px');
-  b.style.setProperty('--d',(0.3+Math.random()*0.8)+'s');
-  b.style.animationDelay=(-Math.random())+'s';
-  viz.appendChild(b);
+function getStations() {
+  let all = [...DEFAULT_STATIONS, ...custom].map(s => ({
+    ...s,
+    isFav: favorites.includes(s.url)
+  }));
+  return all.sort((a, b) => b.isFav - a.isFav);
 }
 
-// Volume
-audio.volume=0.8;
-volSlider.addEventListener('input',()=>{
-  const v=volSlider.value;
-  audio.volume=v/100; volFill.style.width=v+'%'; volPct.textContent=v+'%';
-});
+function render() {
+  const STATIONS = getStations();
+  listEl.innerHTML = '';
+  
+  STATIONS.forEach((s, i) => {
+    const isActive = s.url === currentUrl;
+    const item = document.createElement('div');
+    item.className = 'station-item' + (isActive ? ' active' : '');
 
-// Station list
-function buildList(){
-  stPanel.innerHTML='';
-  STATIONS.forEach((s,i)=>{
-    const r=document.createElement('div');
-    r.className='st-row'+(i===cur?' active':'');
-    r.innerHTML=`<div class="st-dot"></div><div class="st-info"><div class="st-name">${s.name}</div><div class="st-sub">${s.desc.split('·')[0].trim()}</div></div><span class="st-tag">${s.tag}</span>`;
-    r.addEventListener('click',()=>{ const was=playing||loading; switchStation(i); if(was) setTimeout(startStream,120); });
-    stPanel.appendChild(r);
+    item.innerHTML = `
+      <div class="station-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="station-info"><div class="station-name">${s.name}</div></div>
+      <button class="btn-fav ${s.isFav ? 'active' : ''}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="${s.isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+      </button>
+    `;
+
+    if (custom.some(c => c.url === s.url)) {
+      const del = document.createElement('button');
+      del.className = 'btn-delete';
+      del.innerHTML = '×';
+      del.onclick = (e) => {
+        e.stopPropagation();
+        custom = custom.filter(c => c.url !== s.url);
+        localStorage.setItem('customStations', JSON.stringify(custom));
+        render();
+      };
+      item.appendChild(del);
+    }
+
+    item.querySelector('.btn-fav').onclick = (e) => {
+      e.stopPropagation();
+      if (favorites.includes(s.url)) {
+        favorites = favorites.filter(u => u !== s.url);
+      } else {
+        favorites.push(s.url);
+      }
+      localStorage.setItem('favList', JSON.stringify(favorites));
+      render();
+    };
+
+    item.onclick = () => {
+      currentUrl = s.url;
+      localStorage.setItem('lastStationUrl', s.url);
+      start();
+    };
+
+    listEl.appendChild(item);
   });
+  updateNP();
 }
 
-function switchStation(i){
-  if(playing||loading) stopStream();
-  cur=i;
-  const s=STATIONS[i];
-  urlInput.value=s.url;
-  heroName.innerHTML=s.nameH;
-  heroDesc.textContent=s.desc;
-  footerQ.textContent=s.q;
-  errMsg.textContent='';
-  npTitle.textContent='Нажмите ▶ для воспроизведения';
-  npSub.textContent='—';
-  httpWarn.classList.toggle('show', !!s.httpOnly);
-  buildList();
+function updateNP() {
+  const all = [...DEFAULT_STATIONS, ...custom];
+  const s = all.find(st => st.url === currentUrl) || DEFAULT_STATIONS[0];
+  npTitle.textContent = s.name;
+  freqBadge.textContent = s.fmt || '128k MP3';
+  npTitle.classList.toggle('active', playing);
+  deck.classList.toggle('playing-state', playing);
+  statusText.textContent = playing ? 'ПУСК' : 'СТОП';
 }
 
-stToggle.addEventListener('click',()=>{
-  const o=stPanel.classList.toggle('open');
-  stArrow.classList.toggle('open',o);
-});
+function start() {
+  if (audio.src !== currentUrl) audio.src = currentUrl;
+  audio.play().catch(() => {});
+  playing = true;
+  btnPlay.classList.add('playing');
+  playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+  playLabel.textContent = 'СТОП';
+  render();
+}
 
-buildList();
-urlInput.value=STATIONS[0].url;
+function stop() {
+  audio.pause();
+  playing = false;
+  btnPlay.classList.remove('playing');
+  playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+  playLabel.textContent = 'ЭФИР';
+  render();
+}
 
-// Icons
-const SVG_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>';
-const SVG_STOP = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
-const SVG_SPIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
-const NP_IDLE  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>';
-const NP_WAVE  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
-const NP_LOAD  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
+btnPlay.onclick = () => playing ? stop() : start();
 
-function setState(s){
-  if(s==='idle'){
-    playBtn.innerHTML=SVG_PLAY; playBtn.classList.remove('on');
-    npIcon.innerHTML=NP_IDLE; npIcon.classList.remove('spin');
-    viz.classList.remove('on'); dot.classList.remove('live');
-    badgeTxt.textContent='Интернет-радио';
-  } else if(s==='loading'){
-    playBtn.innerHTML=SVG_SPIN; playBtn.classList.remove('on');
-    npIcon.innerHTML=NP_LOAD; npIcon.classList.add('spin');
-    viz.classList.remove('on'); dot.classList.remove('live');
-    badgeTxt.textContent='Подключение…';
-  } else if(s==='playing'){
-    playBtn.innerHTML=SVG_STOP; playBtn.classList.add('on');
-    npIcon.innerHTML=NP_WAVE; npIcon.classList.remove('spin');
-    viz.classList.add('on'); dot.classList.add('live');
-    badgeTxt.textContent='В прямом эфире';
+document.getElementById('btnPrev').onclick = () => {
+  const STATIONS = getStations();
+  let idx = STATIONS.findIndex(s => s.url === currentUrl);
+  idx = (idx - 1 + STATIONS.length) % STATIONS.length;
+  currentUrl = STATIONS[idx].url;
+  if(playing) start(); else render();
+};
+
+document.getElementById('btnNext').onclick = () => {
+  const STATIONS = getStations();
+  let idx = STATIONS.findIndex(s => s.url === currentUrl);
+  idx = (idx + 1) % STATIONS.length;
+  currentUrl = STATIONS[idx].url;
+  if(playing) start(); else render();
+};
+
+// VU Meter logic
+const vuL = document.getElementById('vuL');
+const vuR = document.getElementById('vuR');
+function buildVU(el) {
+  for(let i=0; i<14; i++) {
+    const s = document.createElement('div');
+    s.className = 'vu-seg';
+    el.appendChild(s);
   }
 }
+buildVU(vuL); buildVU(vuR);
 
-function startStream(){
-  errMsg.textContent='';
-  const url=urlInput.value.trim();
-  if(!url){ errMsg.textContent='⚠ Введите URL потока'; return; }
-  const f=STATIONS.findIndex(s=>s.url===url);
-  if(f>=0&&f!==cur){ cur=f; buildList(); }
-  loading=true; setState('loading');
-  npTitle.textContent='Подключение…'; npSub.textContent='Буферизация';
-  audio.src=url; audio.load();
-  audio.play().catch(()=>onErr());
+let vL = 0, vR = 0;
+function animateVU() {
+  if (playing) {
+    vL += (Math.random() * 12 - vL) * 0.3;
+    vR += (Math.random() * 12 - vR) * 0.3;
+  } else {
+    vL *= 0.8; vR *= 0.8;
+  }
+  const update = (el, val) => {
+    el.querySelectorAll('.vu-seg').forEach((s, i) => {
+      const lit = i < val;
+      const color = i < 8 ? '#40d060' : i < 11 ? '#f0c020' : '#ff5050';
+      s.style.background = lit ? color : color + '22';
+      s.style.boxShadow = lit ? `0 0 4px ${color}66` : 'none';
+    });
+  };
+  update(vuL, vL); update(vuR, vR);
+  requestAnimationFrame(animateVU);
 }
+animateVU();
 
-function stopStream(){
-  audio.pause(); audio.src='';
-  playing=false; loading=false;
-  setState('idle');
-  npTitle.textContent='Остановлено'; npSub.textContent='—';
-}
+// Modal Logic
+const modal = document.getElementById('modal');
+document.getElementById('btnAdd').onclick = () => modal.classList.add('open');
+document.getElementById('btnCancel').onclick = () => modal.classList.remove('open');
+document.getElementById('btnConfirm').onclick = () => {
+  const name = document.getElementById('inputName').value.trim();
+  const url = document.getElementById('inputUrl').value.trim();
+  if(url) {
+    custom.push({name: name || 'Своя станция', url, fmt: '128k MP3'});
+    localStorage.setItem('customStations', JSON.stringify(custom));
+    render();
+    modal.classList.remove('open');
+  }
+};
 
-function onErr(){
-  loading=false; playing=false; setState('idle');
-  npTitle.textContent='Ошибка подключения'; npSub.textContent='—';
-  errMsg.textContent='⚠ Не удалось воспроизвести поток';
-}
-
-audio.addEventListener('playing',()=>{
-  playing=true; loading=false; setState('playing');
-  const s=STATIONS[cur];
-  npTitle.textContent=(s?s.name:'Радио')+' — Прямой эфир';
-  npSub.textContent=s?s.desc:'Подключено';
-  errMsg.textContent='';
-});
-audio.addEventListener('waiting',()=>{ npSub.textContent='Буферизация…'; viz.classList.remove('on'); });
-audio.addEventListener('canplay',()=>{ if(playing) viz.classList.add('on'); });
-audio.addEventListener('error',()=>onErr());
-audio.addEventListener('stalled',()=>{ if(playing) npSub.textContent='Соединение нестабильно…'; });
-
-playBtn.addEventListener('click',()=>{ if(loading)return; playing?stopStream():startStream(); });
-urlBtn.addEventListener('click',()=>{ const was=playing||loading; stopStream(); errMsg.textContent=''; if(was) setTimeout(startStream,100); else startStream(); });
-urlInput.addEventListener('keydown',e=>{ if(e.key==='Enter') urlBtn.click(); });
-document.addEventListener('keydown',e=>{ if(e.code==='Space'&&e.target===document.body){ e.preventDefault(); playBtn.click(); } });
+render();
 </script>
 </body>
 </html>
