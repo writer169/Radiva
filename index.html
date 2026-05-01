@@ -31,10 +31,10 @@ body {
   font-family: 'Overpass Mono', monospace;
   background: var(--bg);
   color: var(--text);
-  min-height: 100dvh;
+  height: 100dvh;
   display: flex;
   justify-content: center;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 body::before {
@@ -46,7 +46,14 @@ body::before {
   z-index: 999;
 }
 
-.app { width: 100%; max-width: 420px; padding-bottom: 48px; }
+.app { width: 100%; max-width: 420px; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+.player-fixed { flex-shrink: 0; }
+
+.list-scroll { flex: 1; overflow-y: auto; padding-bottom: 32px; }
+.list-scroll::-webkit-scrollbar { width: 4px; }
+.list-scroll::-webkit-scrollbar-track { background: transparent; }
+.list-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 /* ══ ШАПКА ══ */
 .header {
@@ -211,40 +218,44 @@ body::before {
 <body>
 
 <div class="app">
-  <div class="header">
-    <div class="header-top">
-      <div class="logo">Интернет Радио</div>
-      <div class="freq-badge" id="freqBadge">---</div>
-    </div>
-    <div class="np-label">В эфире</div>
-    <div class="np-title" id="npTitle">—</div>
+  <div class="player-fixed">
+    <div class="header">
+      <div class="header-top">
+        <div class="logo">Интернет Радио</div>
+        <div class="freq-badge" id="freqBadge">---</div>
+      </div>
+      <div class="np-label">В эфире</div>
+      <div class="np-title" id="npTitle">—</div>
 
-    <div class="deck" id="deck">
-      <div class="reels">
-        <div class="reel">
-          <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#1a1508" stroke="#c8973a" stroke-width="1.2"/><g class="reel-hub"><circle cx="26" cy="26" r="10" fill="#2e2810" stroke="#c8973a"/><line x1="26" y1="26" x2="26" y2="16.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="34.6" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="17.4" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/></g></svg>
+      <div class="deck" id="deck">
+        <div class="reels">
+          <div class="reel">
+            <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#1a1508" stroke="#c8973a" stroke-width="1.2"/><g class="reel-hub"><circle cx="26" cy="26" r="10" fill="#2e2810" stroke="#c8973a"/><line x1="26" y1="26" x2="26" y2="16.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="34.6" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="17.4" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/></g></svg>
+          </div>
+          <div class="tape-line"><div class="tape-stripe"></div></div>
+          <div class="reel">
+            <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#1a1508" stroke="#c8973a" stroke-width="1.2"/><g class="reel-hub slow"><circle cx="26" cy="26" r="10" fill="#2e2810" stroke="#c8973a"/><line x1="26" y1="26" x2="26" y2="16.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="34.6" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="17.4" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/></g></svg>
+          </div>
         </div>
-        <div class="tape-line"><div class="tape-stripe"></div></div>
-        <div class="reel">
-          <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#1a1508" stroke="#c8973a" stroke-width="1.2"/><g class="reel-hub slow"><circle cx="26" cy="26" r="10" fill="#2e2810" stroke="#c8973a"/><line x1="26" y1="26" x2="26" y2="16.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="34.6" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="17.4" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/></g></svg>
+        <div class="vu">
+          <div class="vu-row"><div class="vu-label">L</div><div class="vu-track" id="vuL"></div></div>
+          <div class="vu-row"><div class="vu-label">R</div><div class="vu-track" id="vuR"></div></div>
         </div>
+        <div class="deck-status"><div class="status-dot"></div><div class="status-text" id="statusText">СТОП</div></div>
       </div>
-      <div class="vu">
-        <div class="vu-row"><div class="vu-label">L</div><div class="vu-track" id="vuL"></div></div>
-        <div class="vu-row"><div class="vu-label">R</div><div class="vu-track" id="vuR"></div></div>
-      </div>
-      <div class="deck-status"><div class="status-dot"></div><div class="status-text" id="statusText">СТОП</div></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-skip" id="btnPrev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+      <button class="btn-play" id="btnPlay"><svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span id="playLabel">ЭФИР</span></button>
+      <button class="btn-skip" id="btnNext"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
     </div>
   </div>
 
-  <div class="controls">
-    <button class="btn-skip" id="btnPrev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
-    <button class="btn-play" id="btnPlay"><svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span id="playLabel">ЭФИР</span></button>
-    <button class="btn-skip" id="btnNext"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+  <div class="list-scroll">
+    <div class="section-header"><span class="section-label">Станции</span><button class="btn-add" id="btnAdd" style="background:var(--card); border:1px solid var(--border); padding:6px 12px; border-radius:6px; color:var(--sub); cursor:pointer;">+ Добавить</button></div>
+    <div class="stations-list" id="stationsList"></div>
   </div>
-
-  <div class="section-header"><span class="section-label">Станции</span><button class="btn-add" id="btnAdd" style="background:var(--card); border:1px solid var(--border); padding:6px 12px; border-radius:6px; color:var(--sub); cursor:pointer;">+ Добавить</button></div>
-  <div class="stations-list" id="stationsList"></div>
 </div>
 
 <div class="modal-backdrop" id="modal">
