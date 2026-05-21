@@ -267,10 +267,13 @@ body::before {
   </div>
 </div>
 
-<audio id="audio" crossorigin="anonymous"></audio>
+<audio id="audio"></audio>
 
 <script>
 const DEFAULT_STATIONS = [
+  {name:'Дача KZ', url:'https://stream.gakku.kz:8443/dacha', fmt:'128k AAC'},
+  {name:'Дача RU', url:'https://microit2.n340.ru:8443/VgMv0WV17ZVx1uuo_14_dacha_64?radiostatistica=101.ru', fmt:'64k MP3'},
+  {name:'ДИСКОТЕКА НАЗАД В СССР', url:'https://srv02.gpmradio.ru:8443/stream/personal/aacp/64/628640?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiIyMzQ2NzFhNDRiN2Y1NjJlM2Q0MjNkYjM1ZTdlNTE3NyIsIklQIjoiMTc4LjkxLjE4Ny4yMDciLCJVQSI6Ik1vemlsbGEvNS4wIiwiUmVmIjoiIiwidWlkX2NoYW5uZWwiOiI2Mjg2NDAiLCJ0eXBlX2NoYW5uZWwiOiJwZXJzb25hbCIsInR5cGVEZXZpY2UiOiJQQyIsIkJyb3dzZXIiOiIiLCJCcm93c2VyVmVyc2lvbiI6IiIsIlN5c3RlbSI6IlVua25vd24iLCJleHAiOjE3Nzc4NzEwMjl9.HQbRA7RH_wmvOAiy6p4tM141HLxcck5-YsbWqLwnQJA', fmt:'64k AAC'},
   {name:'Нафталин FM', url:'https://radiorecord.hostingradio.ru/naft96.aacp', fmt:'96k AAC'},
   {name:'Дискотека СССР', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/144', fmt:'64k AAC'},
   {name:'СССР 50–70', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/47', fmt:'64k AAC'},
