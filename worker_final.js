@@ -5,7 +5,7 @@ export default {
 
     // ── Secret page route ──────────────────────────────────────────
     if (path === '/' + env.SECRET_PATH || path === '/' + env.SECRET_PATH + '/') {
-      const page = `<!DOCTYPE html>
+      return new Response(`<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -175,6 +175,15 @@ body::before {
 .btn-play.playing { background: var(--red); color: #fff; }
 .btn-skip { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: var(--card); border: 1px solid var(--border); border-radius: 10px; color: var(--sub); cursor: pointer; transition: all 0.15s; }
 
+/* ══ ГРОМКОСТЬ ══ */
+.volume-row { display: flex; align-items: center; gap: 10px; padding: 10px 20px 14px; border-bottom: 1px solid var(--border); }
+.vol-icon { color: var(--muted); flex-shrink: 0; }
+.vol-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: var(--border); outline: none; cursor: pointer; }
+.vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: 2px solid var(--accent2); cursor: pointer; transition: transform 0.15s; }
+.vol-slider::-webkit-slider-thumb:active { transform: scale(1.2); }
+.vol-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: 2px solid var(--accent2); cursor: pointer; }
+.vol-value { font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 700; color: var(--muted); min-width: 32px; text-align: right; }
+
 /* ══ СПИСОК СТАНЦИЙ ══ */
 .section-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 11px; }
 .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.25em; color: var(--sub); text-transform: uppercase; }
@@ -257,6 +266,14 @@ body::before {
       <button class="btn-play" id="btnPlay"><svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span id="playLabel">ЭФИР</span></button>
       <button class="btn-skip" id="btnNext"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
     </div>
+
+    <div class="volume-row">
+      <span class="vol-icon">
+        <svg id="volIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path id="volWave1" d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path id="volWave2" d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+      </span>
+      <input type="range" class="vol-slider" id="volSlider" min="0" max="100" value="100">
+      <span class="vol-value" id="volValue">100</span>
+    </div>
   </div>
 
   <div class="list-scroll">
@@ -278,37 +295,45 @@ body::before {
 
 <script>
 const DEFAULT_STATIONS = [
-  {name:'Дача KZ', url:'/proxy?token=__PROXY_TOKEN__&url=https://stream.gakku.kz:8443/dacha', fmt:'128k AAC'},
-  {name:'Дача RU', url:'/proxy?token=__PROXY_TOKEN__&url=https://microit2.n340.ru:8443/VgMv0WV17ZVx1uuo_14_dacha_64?radiostatistica=101.ru', fmt:'64k MP3'},
-  {name:'ДИСКОТЕКА НАЗАД В СССР', url:'/proxy?token=__PROXY_TOKEN__&url=https://srv02.gpmradio.ru:8443/stream/personal/aacp/64/628640?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiIyMzQ2NzFhNDRiN2Y1NjJlM2Q0MjNkYjM1ZTdlNTE3NyIsIklQIjoiMTc4LjkxLjE4Ny4yMDciLCJVQSI6Ik1vemlsbGEvNS4wIiwiUmVmIjoiIiwidWlkX2NoYW5uZWwiOiI2Mjg2NDAiLCJ0eXBlX2NoYW5uZWwiOiJwZXJzb25hbCIsInR5cGVEZXZpY2UiOiJQQyIsIkJyb3dzZXIiOiIiLCJCcm93c2VyVmVyc2lvbiI6IiIsIlN5c3RlbSI6IlVua25vd24iLCJleHAiOjE3Nzc4NzEwMjl9.HQbRA7RH_wmvOAiy6p4tM141HLxcck5-YsbWqLwnQJA', fmt:'64k AAC'},
-  {name:'Нафталин FM', url:'/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/naft96.aacp', fmt:'96k AAC'},
-  {name:'Дискотека СССР', url:'/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/144', fmt:'64k AAC'},
-  {name:'СССР 50–70', url:'/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/47', fmt:'64k AAC'},
-  {name:'ВИА', url:'/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/36', fmt:'64k AAC'},
-  {name:'Ретро Хит', url:'/proxy?token=__PROXY_TOKEN__&url=http://air.volna.top/Retro', fmt:'128k MP3'},
-  {name:'Дискотека 80-х', url:'/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/1', fmt:'64k AAC'},
-  {name:'Record 80-х', url:'/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/198096.aacp', fmt:'96k AAC'},
-  {name:'Italo Disco', url:'/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/161', fmt:'64k AAC'},
-  {name:'Россия 90-х', url:'/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/33', fmt:'64k AAC'},
-  {name:'Супердискотека 90-х', url:'/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/sd9096.aacp', fmt:'96k AAC'},
-  {name:'Eurodance', url:'/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/eurodance96.aacp', fmt:'96k AAC'},
-  {name:'Русский рок', url:'/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/42', fmt:'64k AAC'},
-  {name:'Король и Шут', url:'/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/191', fmt:'64k AAC'},
-  {name:'Медляк FM', url:'/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/mdl96.aacp', fmt:'96k AAC'},
-  {name:'Симфония FM', url:'/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/symph96.aacp', fmt:'96k AAC'},
-  {name:'Советская эстрада', url:'/proxy?token=__PROXY_TOKEN__&url=https://evcast.mediacp.eu:2075/stream', fmt:'128k MP3'},
-  {name:'СССР', url:'/proxy?token=__PROXY_TOKEN__&url=https://myradio24.org/ussr', fmt:'128k MP3'},
-  {name:'Всесоюзное', url:'/proxy?token=__PROXY_TOKEN__&url=https://radio-kolibri.ru:1045/stream', fmt:'128k MP3'},
-  {name:'Родные Песни', url:'/proxy?token=__PROXY_TOKEN__&url=https://rodpesni.amgradio.ru/rp', fmt:'128k MP3'},
-  {name:'Русское Кино', url:'/proxy?token=__PROXY_TOKEN__&url=https://rr-russkoekino.hostingradio.ru/russkoekino96.aacp', fmt:'96k AAC'},
-  {name:'Забытая кассета', url:'/proxy?token=__PROXY_TOKEN__&url=https://casseta-disco.ru:6270/stream', fmt:'128k MP3'},
-  {name:'Monte Carlo', url:'/proxy?token=__PROXY_TOKEN__&url=https://montecarlo.hostingradio.ru/montecarlo128.mp3', fmt:'128k MP3'},
+  {name:'Дача KZ', url:'https://stream.gakku.kz:8443/dacha', fmt:'128k AAC'},
+  {name:'Дача RU', url:'https://microit2.n340.ru:8443/VgMv0WV17ZVx1uuo_14_dacha_64?radiostatistica=101.ru', fmt:'64k MP3'},
+  {name:'ДИСКОТЕКА НАЗАД В СССР', url:'https://srv02.gpmradio.ru:8443/stream/personal/aacp/64/628640?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiIyMzQ2NzFhNDRiN2Y1NjJlM2Q0MjNkYjM1ZTdlNTE3NyIsIklQIjoiMTc4LjkxLjE4Ny4yMDciLCJVQSI6Ik1vemlsbGEvNS4wIiwiUmVmIjoiIiwidWlkX2NoYW5uZWwiOiI2Mjg2NDAiLCJ0eXBlX2NoYW5uZWwiOiJwZXJzb25hbCIsInR5cGVEZXZpY2UiOiJQQyIsIkJyb3dzZXIiOiIiLCJCcm93c2VyVmVyc2lvbiI6IiIsIlN5c3RlbSI6IlVua25vd24iLCJleHAiOjE3Nzc4NzEwMjl9.HQbRA7RH_wmvOAiy6p4tM141HLxcck5-YsbWqLwnQJA', fmt:'64k AAC'},
+  {name:'Нафталин FM', url:'https://radiorecord.hostingradio.ru/naft96.aacp', fmt:'96k AAC'},
+  {name:'Дискотека СССР', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/144', fmt:'64k AAC'},
+  {name:'СССР 50–70', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/47', fmt:'64k AAC'},
+  {name:'ВИА', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/36', fmt:'64k AAC'},
+  {name:'Ретро Хит', url:'http://air.volna.top/Retro', fmt:'128k MP3'},
+  {name:'Дискотека 80-х', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/1', fmt:'64k AAC'},
+  {name:'Record 80-х', url:'https://radiorecord.hostingradio.ru/198096.aacp', fmt:'96k AAC'},
+  {name:'Italo Disco', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/161', fmt:'64k AAC'},
+  {name:'Россия 90-х', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/33', fmt:'64k AAC'},
+  {name:'Супердискотека 90-х', url:'https://radiorecord.hostingradio.ru/sd9096.aacp', fmt:'96k AAC'},
+  {name:'Eurodance', url:'https://radiorecord.hostingradio.ru/eurodance96.aacp', fmt:'96k AAC'},
+  {name:'Русский рок', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/42', fmt:'64k AAC'},
+  {name:'Король и Шут', url:'https://srv11.gpmradio.ru:8443/stream/pro/aac/64/191', fmt:'64k AAC'},
+  {name:'Медляк FM', url:'https://radiorecord.hostingradio.ru/mdl96.aacp', fmt:'96k AAC'},
+  {name:'Симфония FM', url:'https://radiorecord.hostingradio.ru/symph96.aacp', fmt:'96k AAC'},
+  {name:'Советская эстрада', url:'https://evcast.mediacp.eu:2075/stream', fmt:'128k MP3'},
+  {name:'СССР', url:'https://myradio24.org/ussr', fmt:'128k MP3'},
+  {name:'Всесоюзное', url:'https://radio-kolibri.ru:1045/stream', fmt:'128k MP3'},
+  {name:'Родные Песни', url:'https://rodpesni.amgradio.ru/rp', fmt:'128k MP3'},
+  {name:'Русское Кино', url:'https://rr-russkoekino.hostingradio.ru/russkoekino96.aacp', fmt:'96k AAC'},
+  {name:'Забытая кассета', url:'https://casseta-disco.ru:6270/stream', fmt:'128k MP3'},
+  {name:'Monte Carlo', url:'https://montecarlo.hostingradio.ru/montecarlo128.mp3', fmt:'128k MP3'},
 ];
 
 let favorites = JSON.parse(localStorage.getItem('favList') || '[]');
 let custom = JSON.parse(localStorage.getItem('customStations') || '[]');
 let playing = false;
 let currentUrl = localStorage.getItem('lastStationUrl') || DEFAULT_STATIONS[0].url;
+
+// Reconnect state
+let retryCount = 0;
+let retryTimer = null;
+let stallTimer = null;
+let lastBufEnd = -1;
+const MAX_RETRIES = 8;
+const BASE_RETRY_MS = 1500;
 
 const audio = document.getElementById('audio');
 const listEl = document.getElementById('stationsList');
@@ -319,6 +344,36 @@ const statusText = document.getElementById('statusText');
 const btnPlay = document.getElementById('btnPlay');
 const playIcon = document.getElementById('playIcon');
 const playLabel = document.getElementById('playLabel');
+const volSlider = document.getElementById('volSlider');
+const volValue = document.getElementById('volValue');
+const volWave1 = document.getElementById('volWave1');
+const volWave2 = document.getElementById('volWave2');
+
+// Volume
+const savedVol = localStorage.getItem('volume');
+audio.volume = savedVol !== null ? savedVol / 100 : 1;
+volSlider.value = savedVol !== null ? savedVol : 100;
+volValue.textContent = volSlider.value;
+
+volSlider.oninput = () => {
+  const v = parseInt(volSlider.value);
+  audio.volume = v / 100;
+  volValue.textContent = v;
+  localStorage.setItem('volume', v);
+  // Update icon: muted if 0
+  if (v === 0) {
+    volWave1.style.display = 'none';
+    volWave2.style.display = 'none';
+  } else if (v < 50) {
+    volWave1.style.display = '';
+    volWave2.style.display = 'none';
+  } else {
+    volWave1.style.display = '';
+    volWave2.style.display = '';
+  }
+};
+// Init icon state
+volSlider.oninput();
 
 function getStations() {
   let all = [...DEFAULT_STATIONS, ...custom].map(s => ({
@@ -387,27 +442,80 @@ function updateNP() {
   const s = all.find(st => st.url === currentUrl) || DEFAULT_STATIONS[0];
   npTitle.textContent = s.name;
   freqBadge.textContent = s.fmt || '128k MP3';
-  npTitle.classList.toggle('active', playing);
-  deck.classList.toggle('playing-state', playing);
-  statusText.textContent = playing ? 'ПУСК' : 'СТОП';
 }
 
+function setStatus(txt, isPlaying) {
+  statusText.textContent = txt;
+  deck.classList.toggle('playing-state', isPlaying);
+  npTitle.classList.toggle('active', isPlaying);
+}
+
+function clearTimers() {
+  clearTimeout(retryTimer);
+  clearInterval(stallTimer);
+}
+
+function startStallWatchdog() {
+  clearInterval(stallTimer);
+  lastBufEnd = -1;
+  stallTimer = setInterval(() => {
+    if (!playing) return;
+    const buf = audio.buffered.length > 0 ? audio.buffered.end(audio.buffered.length - 1) : -1;
+    if (buf === lastBufEnd && !audio.paused && audio.readyState < 3) {
+      scheduleReconnect('БУФЕР...');
+    }
+    lastBufEnd = buf;
+  }, 5000);
+}
+
+function scheduleReconnect(statusMsg) {
+  if (!playing) return;
+  clearTimers();
+  const delay = Math.min(BASE_RETRY_MS * Math.pow(1.6, retryCount), 30000);
+  retryCount++;
+  setStatus(statusMsg || 'RECONNECT', true);
+  retryTimer = setTimeout(() => {
+    if (!playing) return;
+    audio.src = '';
+    audio.load();
+    audio.src = currentUrl;
+    audio.play().catch(() => {
+      if (retryCount < MAX_RETRIES) scheduleReconnect('ПОВТОР...');
+      else { setStatus('ОШИБКА', false); playing = false; btnPlay.classList.remove('playing'); playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>'; playLabel.textContent = 'ЭФИР'; }
+    });
+    startStallWatchdog();
+  }, delay);
+}
+
+audio.addEventListener('playing', () => { retryCount = 0; setStatus('ПУСК', true); startStallWatchdog(); });
+audio.addEventListener('waiting', () => { if (playing) setStatus('БУФЕР...', true); });
+audio.addEventListener('stalled', () => { if (playing) scheduleReconnect('STALL...'); });
+audio.addEventListener('error',   () => { if (playing) scheduleReconnect('RECONNECT'); });
+audio.addEventListener('ended',   () => { if (playing) scheduleReconnect('RECONNECT'); });
+
 function start() {
+  clearTimers();
+  retryCount = 0;
   if (audio.src !== currentUrl) audio.src = currentUrl;
-  audio.play().catch(() => {});
+  audio.play().catch(() => scheduleReconnect('RECONNECT'));
   playing = true;
   btnPlay.classList.add('playing');
   playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
   playLabel.textContent = 'СТОП';
+  setStatus('БУФЕР...', true);
   render();
 }
 
 function stop() {
+  clearTimers();
   audio.pause();
+  audio.src = '';
   playing = false;
+  retryCount = 0;
   btnPlay.classList.remove('playing');
   playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
   playLabel.textContent = 'ЭФИР';
+  setStatus('СТОП', false);
   render();
 }
 
@@ -478,63 +586,11 @@ document.getElementById('btnConfirm').onclick = () => {
 };
 
 render();
+setStatus('СТОП', false);
 </script>
 </body>
-</html>`.replaceAll('__PROXY_TOKEN__', env.PROXY_TOKEN);
-      return new Response(page, {
+</html>`, {
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      });
-    }
-
-    // ── Proxy route ────────────────────────────────────────────────
-    if (path.startsWith('/proxy')) {
-      const token = url.searchParams.get('token');
-      if (!env.PROXY_TOKEN || token !== env.PROXY_TOKEN) {
-        return new Response('Forbidden', { status: 403 });
-      }
-
-      const target = url.searchParams.get('url');
-      if (!target) {
-        return new Response('Missing ?url= parameter', { status: 400 });
-      }
-
-      let targetUrl;
-      try {
-        targetUrl = new URL(target);
-        if (!['http:', 'https:'].includes(targetUrl.protocol)) {
-          return new Response('Invalid protocol', { status: 400 });
-        }
-      } catch {
-        return new Response('Invalid URL', { status: 400 });
-      }
-
-      const upstreamResponse = await fetch(targetUrl.toString(), {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; RadioProxy/1.0)',
-          'Icy-MetaData': '1',
-          ...(request.headers.get('Range') ? { Range: request.headers.get('Range') } : {}),
-        },
-      });
-
-      if (!upstreamResponse.ok && upstreamResponse.status !== 206) {
-        return new Response(`Upstream error: ${upstreamResponse.status}`, { status: 502 });
-      }
-
-      const responseHeaders = new Headers();
-      const copyHeaders = [
-        'Content-Type', 'Content-Length', 'Accept-Ranges',
-        'icy-br', 'icy-genre', 'icy-name', 'icy-url', 'icy-metaint',
-      ];
-      for (const h of copyHeaders) {
-        const val = upstreamResponse.headers.get(h);
-        if (val) responseHeaders.set(h, val);
-      }
-      responseHeaders.set('Access-Control-Allow-Origin', '*');
-      responseHeaders.set('Cache-Control', 'no-store');
-
-      return new Response(upstreamResponse.body, {
-        status: upstreamResponse.status,
-        headers: responseHeaders,
       });
     }
 
