@@ -1,0 +1,3 @@
+name = "radiva"
+main = "worker_final.js"
+compatibility_date = "2026-01-01"
