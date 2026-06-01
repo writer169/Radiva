@@ -1,0 +1,544 @@
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const path = url.pathname;
+
+    // ── Secret page route ──────────────────────────────────────────
+    if (path === '/' + env.SECRET_PATH || path === '/' + env.SECRET_PATH + '/') {
+      const page = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Радиоприемник</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Overpass+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #0c0b09;
+  --surface: #161410;
+  --card: #1c1a15;
+  --card-hover: #232019;
+  --accent: #c8973a;
+  --accent2: #f0c050;
+  --red: #d04040;
+  --text: #f0e8d0;
+  --sub: #b8aa90;
+  --muted: #706050;
+  --border: #2c2820;
+  --active-bg: #281e0e;
+  --active-border: #c8973a;
+  --fav-color: #ff4081;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Overpass Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  height: 100dvh;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 999;
+}
+
+.app { width: 100%; max-width: 420px; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+.player-fixed { flex-shrink: 0; }
+
+.list-scroll { flex: 1; overflow-y: auto; padding-bottom: 32px; }
+.list-scroll::-webkit-scrollbar { width: 4px; }
+.list-scroll::-webkit-scrollbar-track { background: transparent; }
+.list-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ══ ШАПКА ══ */
+.header {
+  padding: 24px 20px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.logo {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.35em;
+  color: var(--sub);
+  text-transform: uppercase;
+}
+
+.freq-badge {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent2);
+  background: rgba(200,151,58,0.12);
+  border: 1px solid rgba(200,151,58,0.3);
+  padding: 5px 10px;
+  border-radius: 4px;
+  min-width: 90px;
+  text-align: center;
+}
+
+.np-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--sub);
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+
+.np-title {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  min-height: 22px;
+  transition: color 0.3s;
+}
+.np-title.active { color: var(--accent2); }
+
+/* ══ ДЕКА ══ */
+.deck {
+  margin-top: 18px;
+  background: #2a2318;
+  border: 1px solid #4a4030;
+  border-radius: 12px;
+  padding: 16px 18px 14px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.deck::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, #3a3020 15%, #c8973a 30%, #f0c050 50%, #c8973a 70%, #3a3020 85%, transparent 100%);
+  opacity: 0.6;
+}
+
+.reels { display: flex; gap: 14px; flex-shrink: 0; position: relative; align-items: center; }
+.reel { width: 52px; height: 52px; position: relative; }
+.reel svg { width: 100%; height: 100%; }
+.reel-hub { transform-origin: 50% 50%; }
+
+.playing-state .reel-hub { animation: spinReel 2.4s linear infinite; }
+.playing-state .reel-hub.slow { animation-duration: 3.8s; }
+@keyframes spinReel { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.tape-line { width: 14px; height: 4px; background: #3a2e10; border-top: 1px solid #c8973a55; border-bottom: 1px solid #c8973a55; overflow: hidden; flex-shrink: 0; position: relative; }
+.tape-stripe { position: absolute; top: 0; left: -100%; width: 200%; height: 100%; background: repeating-linear-gradient(90deg, #3a2e10 0px, #3a2e10 4px, #6b5020 4px, #6b5020 6px); opacity: 0; transition: opacity 0.3s; }
+.playing-state .tape-stripe { opacity: 1; animation: tapeMove 0.6s linear infinite; }
+@keyframes tapeMove { from { transform: translateX(0); } to { transform: translateX(50%); } }
+
+.vu { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.vu-row { display: flex; align-items: center; gap: 6px; }
+.vu-label { font-family: 'Unbounded', monospace; font-size: 8px; font-weight: 700; color: var(--muted); width: 10px; }
+.vu-track { flex: 1; height: 9px; background: #0c0a07; border-radius: 2px; overflow: hidden; border: 1px solid #1e1c14; display: flex; gap: 2px; padding: 1px 2px; }
+.vu-seg { flex: 1; border-radius: 1px; background: transparent; transition: background 0.05s; }
+
+.deck-status { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+.status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); transition: all 0.3s; }
+.playing-state .status-dot { background: var(--red); box-shadow: 0 0 7px var(--red); animation: blinkDot 1.1s ease-in-out infinite; }
+@keyframes blinkDot { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+.status-text { font-family: 'Unbounded', sans-serif; font-size: 7px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.playing-state .status-text { color: var(--accent); }
+
+/* ══ УПРАВЛЕНИЕ ══ */
+.controls { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.btn-play { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px 20px; background: var(--accent); border: none; border-radius: 10px; color: #0c0b09; font-family: 'Unbounded', sans-serif; font-size: 11px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+.btn-play:active { transform: scale(0.96); }
+.btn-play.playing { background: var(--red); color: #fff; }
+.btn-skip { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: var(--card); border: 1px solid var(--border); border-radius: 10px; color: var(--sub); cursor: pointer; transition: all 0.15s; }
+
+/* ══ СПИСОК СТАНЦИЙ ══ */
+.section-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 11px; }
+.section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.25em; color: var(--sub); text-transform: uppercase; }
+.stations-list { padding: 0 20px; display: flex; flex-direction: column; gap: 8px; }
+
+.station-item {
+  display: flex;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.18s;
+  user-select: none;
+}
+.station-item:active { transform: scale(0.98); }
+.station-item.active { background: var(--active-bg); border-color: var(--active-border); }
+
+.station-num { width: 42px; text-align: center; font-family: 'Unbounded', monospace; font-size: 10px; font-weight: 700; color: var(--muted); border-right: 1px solid var(--border); padding: 20px 0; }
+.station-item.active .station-num { color: var(--accent); }
+
+.station-info { flex: 1; padding: 14px 16px; min-width: 0; }
+.station-name { font-size: 16px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+.station-item.active .station-name { color: var(--accent2); }
+
+.btn-fav {
+  background: none; border: none; color: var(--muted); padding: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
+}
+.btn-fav.active { color: var(--fav-color); filter: drop-shadow(0 0 4px rgba(255,64,129,0.3)); }
+
+.btn-delete { width: 40px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; border-left: 1px solid var(--border); color: var(--muted); font-size: 18px; cursor: pointer; }
+
+/* ══ МОДАЛЬНОЕ ОКНО ══ */
+.modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+.modal-backdrop.open { display: flex; }
+.modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 22px 20px 40px; width: 100%; max-width: 420px; animation: slideUp 0.3s ease-out; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.field { margin-bottom: 15px; }
+.field label { display: block; font-size: 10px; color: var(--sub); text-transform: uppercase; margin-bottom: 8px; }
+.field input { width: 100%; padding: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: #fff; font-family: inherit; outline: none; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn-confirm { flex: 1; padding: 14px; background: var(--accent); border: none; border-radius: 8px; font-weight: 900; cursor: pointer; }
+.btn-cancel { flex: 1; padding: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--sub); cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="player-fixed">
+    <div class="header">
+      <div class="header-top">
+        <div class="logo">Интернет Радио</div>
+        <div class="freq-badge" id="freqBadge">---</div>
+      </div>
+      <div class="np-label">В эфире</div>
+      <div class="np-title" id="npTitle">—</div>
+
+      <div class="deck" id="deck">
+        <div class="reels">
+          <div class="reel">
+            <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#1a1508" stroke="#c8973a" stroke-width="1.2"/><g class="reel-hub"><circle cx="26" cy="26" r="10" fill="#2e2810" stroke="#c8973a"/><line x1="26" y1="26" x2="26" y2="16.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="34.6" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="17.4" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/></g></svg>
+          </div>
+          <div class="tape-line"><div class="tape-stripe"></div></div>
+          <div class="reel">
+            <svg viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="25" fill="#1a1508" stroke="#c8973a" stroke-width="1.2"/><g class="reel-hub slow"><circle cx="26" cy="26" r="10" fill="#2e2810" stroke="#c8973a"/><line x1="26" y1="26" x2="26" y2="16.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="34.6" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/><line x1="26" y1="26" x2="17.4" y2="31.5" stroke="#f0c050" stroke-width="1.8" stroke-linecap="round"/></g></svg>
+          </div>
+        </div>
+        <div class="vu">
+          <div class="vu-row"><div class="vu-label">L</div><div class="vu-track" id="vuL"></div></div>
+          <div class="vu-row"><div class="vu-label">R</div><div class="vu-track" id="vuR"></div></div>
+        </div>
+        <div class="deck-status"><div class="status-dot"></div><div class="status-text" id="statusText">СТОП</div></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-skip" id="btnPrev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+      <button class="btn-play" id="btnPlay"><svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg><span id="playLabel">ЭФИР</span></button>
+      <button class="btn-skip" id="btnNext"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
+    </div>
+  </div>
+
+  <div class="list-scroll">
+    <div class="section-header"><span class="section-label">Станции</span><button class="btn-add" id="btnAdd" style="background:var(--card); border:1px solid var(--border); padding:6px 12px; border-radius:6px; color:var(--sub); cursor:pointer;">+ Добавить</button></div>
+    <div class="stations-list" id="stationsList"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="field"><label>Название</label><input type="text" id="inputName" placeholder="Моя станция"></div>
+    <div class="field"><label>URL потока</label><input type="url" id="inputUrl" placeholder="https://..."></div>
+    <div class="modal-actions"><button class="btn-cancel" id="btnCancel">Отмена</button><button class="btn-confirm" id="btnConfirm">Добавить</button></div>
+  </div>
+</div>
+
+<audio id="audio"></audio>
+
+<script>
+const DEFAULT_STATIONS = [
+  {name:'Дача KZ', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://stream.gakku.kz:8443/dacha', fmt:'128k AAC'},
+  {name:'Дача RU', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://microit2.n340.ru:8443/VgMv0WV17ZVx1uuo_14_dacha_64?radiostatistica=101.ru', fmt:'64k MP3'},
+  {name:'ДИСКОТЕКА НАЗАД В СССР', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://srv02.gpmradio.ru:8443/stream/personal/aacp/64/628640?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiIyMzQ2NzFhNDRiN2Y1NjJlM2Q0MjNkYjM1ZTdlNTE3NyIsIklQIjoiMTc4LjkxLjE4Ny4yMDciLCJVQSI6Ik1vemlsbGEvNS4wIiwiUmVmIjoiIiwidWlkX2NoYW5uZWwiOiI2Mjg2NDAiLCJ0eXBlX2NoYW5uZWwiOiJwZXJzb25hbCIsInR5cGVEZXZpY2UiOiJQQyIsIkJyb3dzZXIiOiIiLCJCcm93c2VyVmVyc2lvbiI6IiIsIlN5c3RlbSI6IlVua25vd24iLCJleHAiOjE3Nzc4NzEwMjl9.HQbRA7RH_wmvOAiy6p4tM141HLxcck5-YsbWqLwnQJA', fmt:'64k AAC'},
+  {name:'Нафталин FM', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/naft96.aacp', fmt:'96k AAC'},
+  {name:'Дискотека СССР', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/144', fmt:'64k AAC'},
+  {name:'СССР 50–70', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/47', fmt:'64k AAC'},
+  {name:'ВИА', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/36', fmt:'64k AAC'},
+  {name:'Ретро Хит', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=http://air.volna.top/Retro', fmt:'128k MP3'},
+  {name:'Дискотека 80-х', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/1', fmt:'64k AAC'},
+  {name:'Record 80-х', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/198096.aacp', fmt:'96k AAC'},
+  {name:'Italo Disco', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/161', fmt:'64k AAC'},
+  {name:'Россия 90-х', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/33', fmt:'64k AAC'},
+  {name:'Супердискотека 90-х', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/sd9096.aacp', fmt:'96k AAC'},
+  {name:'Eurodance', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/eurodance96.aacp', fmt:'96k AAC'},
+  {name:'Русский рок', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/42', fmt:'64k AAC'},
+  {name:'Король и Шут', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://srv11.gpmradio.ru:8443/stream/pro/aac/64/191', fmt:'64k AAC'},
+  {name:'Медляк FM', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/mdl96.aacp', fmt:'96k AAC'},
+  {name:'Симфония FM', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://radiorecord.hostingradio.ru/symph96.aacp', fmt:'96k AAC'},
+  {name:'Советская эстрада', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://evcast.mediacp.eu:2075/stream', fmt:'128k MP3'},
+  {name:'СССР', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://myradio24.org/ussr', fmt:'128k MP3'},
+  {name:'Всесоюзное', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://radio-kolibri.ru:1045/stream', fmt:'128k MP3'},
+  {name:'Родные Песни', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://rodpesni.amgradio.ru/rp', fmt:'128k MP3'},
+  {name:'Русское Кино', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://rr-russkoekino.hostingradio.ru/russkoekino96.aacp', fmt:'96k AAC'},
+  {name:'Забытая кассета', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://casseta-disco.ru:6270/stream', fmt:'128k MP3'},
+  {name:'Monte Carlo', url:'https://radio.writer.dpdns.org/proxy?token=__PROXY_TOKEN__&url=https://montecarlo.hostingradio.ru/montecarlo128.mp3', fmt:'128k MP3'},
+];
+
+let favorites = JSON.parse(localStorage.getItem('favList') || '[]');
+let custom = JSON.parse(localStorage.getItem('customStations') || '[]');
+let playing = false;
+let currentUrl = localStorage.getItem('lastStationUrl') || DEFAULT_STATIONS[0].url;
+
+const audio = document.getElementById('audio');
+const listEl = document.getElementById('stationsList');
+const npTitle = document.getElementById('npTitle');
+const freqBadge = document.getElementById('freqBadge');
+const deck = document.getElementById('deck');
+const statusText = document.getElementById('statusText');
+const btnPlay = document.getElementById('btnPlay');
+const playIcon = document.getElementById('playIcon');
+const playLabel = document.getElementById('playLabel');
+
+function getStations() {
+  let all = [...DEFAULT_STATIONS, ...custom].map(s => ({
+    ...s,
+    isFav: favorites.includes(s.url)
+  }));
+  return all.sort((a, b) => b.isFav - a.isFav);
+}
+
+function render() {
+  const STATIONS = getStations();
+  listEl.innerHTML = '';
+  
+  STATIONS.forEach((s, i) => {
+    const isActive = s.url === currentUrl;
+    const item = document.createElement('div');
+    item.className = 'station-item' + (isActive ? ' active' : '');
+
+    item.innerHTML = \`
+      <div class="station-num">\${String(i+1).padStart(2,'0')}</div>
+      <div class="station-info"><div class="station-name">\${s.name}</div></div>
+      <button class="btn-fav \${s.isFav ? 'active' : ''}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="\${s.isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+      </button>
+    \`;
+
+    if (custom.some(c => c.url === s.url)) {
+      const del = document.createElement('button');
+      del.className = 'btn-delete';
+      del.innerHTML = '×';
+      del.onclick = (e) => {
+        e.stopPropagation();
+        custom = custom.filter(c => c.url !== s.url);
+        localStorage.setItem('customStations', JSON.stringify(custom));
+        render();
+      };
+      item.appendChild(del);
+    }
+
+    item.querySelector('.btn-fav').onclick = (e) => {
+      e.stopPropagation();
+      if (favorites.includes(s.url)) {
+        favorites = favorites.filter(u => u !== s.url);
+      } else {
+        favorites.push(s.url);
+      }
+      localStorage.setItem('favList', JSON.stringify(favorites));
+      render();
+    };
+
+    item.onclick = () => {
+      currentUrl = s.url;
+      localStorage.setItem('lastStationUrl', s.url);
+      start();
+    };
+
+    listEl.appendChild(item);
+  });
+  updateNP();
+}
+
+function updateNP() {
+  const all = [...DEFAULT_STATIONS, ...custom];
+  const s = all.find(st => st.url === currentUrl) || DEFAULT_STATIONS[0];
+  npTitle.textContent = s.name;
+  freqBadge.textContent = s.fmt || '128k MP3';
+  npTitle.classList.toggle('active', playing);
+  deck.classList.toggle('playing-state', playing);
+  statusText.textContent = playing ? 'ПУСК' : 'СТОП';
+}
+
+function start() {
+  if (audio.src !== currentUrl) audio.src = currentUrl;
+  audio.play().catch(() => {});
+  playing = true;
+  btnPlay.classList.add('playing');
+  playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+  playLabel.textContent = 'СТОП';
+  render();
+}
+
+function stop() {
+  audio.pause();
+  playing = false;
+  btnPlay.classList.remove('playing');
+  playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+  playLabel.textContent = 'ЭФИР';
+  render();
+}
+
+btnPlay.onclick = () => playing ? stop() : start();
+
+document.getElementById('btnPrev').onclick = () => {
+  const STATIONS = getStations();
+  let idx = STATIONS.findIndex(s => s.url === currentUrl);
+  idx = (idx - 1 + STATIONS.length) % STATIONS.length;
+  currentUrl = STATIONS[idx].url;
+  if(playing) start(); else render();
+};
+
+document.getElementById('btnNext').onclick = () => {
+  const STATIONS = getStations();
+  let idx = STATIONS.findIndex(s => s.url === currentUrl);
+  idx = (idx + 1) % STATIONS.length;
+  currentUrl = STATIONS[idx].url;
+  if(playing) start(); else render();
+};
+
+// VU Meter logic
+const vuL = document.getElementById('vuL');
+const vuR = document.getElementById('vuR');
+function buildVU(el) {
+  for(let i=0; i<14; i++) {
+    const s = document.createElement('div');
+    s.className = 'vu-seg';
+    el.appendChild(s);
+  }
+}
+buildVU(vuL); buildVU(vuR);
+
+let vL = 0, vR = 0;
+function animateVU() {
+  if (playing) {
+    vL += (Math.random() * 12 - vL) * 0.3;
+    vR += (Math.random() * 12 - vR) * 0.3;
+  } else {
+    vL *= 0.8; vR *= 0.8;
+  }
+  const update = (el, val) => {
+    el.querySelectorAll('.vu-seg').forEach((s, i) => {
+      const lit = i < val;
+      const color = i < 8 ? '#40d060' : i < 11 ? '#f0c020' : '#ff5050';
+      s.style.background = lit ? color : color + '22';
+      s.style.boxShadow = lit ? \`0 0 4px \${color}66\` : 'none';
+    });
+  };
+  update(vuL, vL); update(vuR, vR);
+  requestAnimationFrame(animateVU);
+}
+animateVU();
+
+// Modal Logic
+const modal = document.getElementById('modal');
+document.getElementById('btnAdd').onclick = () => modal.classList.add('open');
+document.getElementById('btnCancel').onclick = () => modal.classList.remove('open');
+document.getElementById('btnConfirm').onclick = () => {
+  const name = document.getElementById('inputName').value.trim();
+  const url = document.getElementById('inputUrl').value.trim();
+  if(url) {
+    custom.push({name: name || 'Своя станция', url, fmt: '128k MP3'});
+    localStorage.setItem('customStations', JSON.stringify(custom));
+    render();
+    modal.classList.remove('open');
+  }
+};
+
+render();
+</script>
+</body>
+</html>`.replaceAll('__PROXY_TOKEN__', env.PROXY_TOKEN);
+      return new Response(page, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      });
+    }
+
+    // ── Proxy route ────────────────────────────────────────────────
+    if (path.startsWith('/proxy')) {
+      const token = url.searchParams.get('token');
+      if (!env.PROXY_TOKEN || token !== env.PROXY_TOKEN) {
+        return new Response('Forbidden', { status: 403 });
+      }
+
+      const target = url.searchParams.get('url');
+      if (!target) {
+        return new Response('Missing ?url= parameter', { status: 400 });
+      }
+
+      let targetUrl;
+      try {
+        targetUrl = new URL(target);
+        if (!['http:', 'https:'].includes(targetUrl.protocol)) {
+          return new Response('Invalid protocol', { status: 400 });
+        }
+      } catch {
+        return new Response('Invalid URL', { status: 400 });
+      }
+
+      const upstreamResponse = await fetch(targetUrl.toString(), {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; RadioProxy/1.0)',
+          'Icy-MetaData': '1',
+          ...(request.headers.get('Range') ? { Range: request.headers.get('Range') } : {}),
+        },
+      });
+
+      if (!upstreamResponse.ok && upstreamResponse.status !== 206) {
+        return new Response(`Upstream error: ${upstreamResponse.status}`, { status: 502 });
+      }
+
+      const responseHeaders = new Headers();
+      const copyHeaders = [
+        'Content-Type', 'Content-Length', 'Accept-Ranges',
+        'icy-br', 'icy-genre', 'icy-name', 'icy-url', 'icy-metaint',
+      ];
+      for (const h of copyHeaders) {
+        const val = upstreamResponse.headers.get(h);
+        if (val) responseHeaders.set(h, val);
+      }
+      responseHeaders.set('Access-Control-Allow-Origin', '*');
+      responseHeaders.set('Cache-Control', 'no-store');
+
+      return new Response(upstreamResponse.body, {
+        status: upstreamResponse.status,
+        headers: responseHeaders,
+      });
+    }
+
+    // ── Everything else ────────────────────────────────────────────
+    return new Response('Not found', { status: 404 });
+  },
+};
