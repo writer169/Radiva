@@ -1,0 +1,51 @@
+#EXTM3U
+#EXTINF:-1,Дача KZ
+https://stream.gakku.kz:8443/dacha
+#EXTINF:-1,Дача RU
+https://microit2.n340.ru:8443/VgMv0WV17ZVx1uuo_14_dacha_64?radiostatistica=101.ru
+#EXTINF:-1,ДИСКОТЕКА НАЗАД В СССР
+https://srv02.gpmradio.ru:8443/stream/personal/aacp/64/628640?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiIyMzQ2NzFhNDRiN2Y1NjJlM2Q0MjNkYjM1ZTdlNTE3NyIsIklQIjoiMTc4LjkxLjE4Ny4yMDciLCJVQSI6Ik1vemlsbGEvNS4wIiwiUmVmIjoiIiwidWlkX2NoYW5uZWwiOiI2Mjg2NDAiLCJ0eXBlX2NoYW5uZWwiOiJwZXJzb25hbCIsInR5cGVEZXZpY2UiOiJQQyIsIkJyb3dzZXIiOiIiLCJCcm93c2VyVmVyc2lvbiI6IiIsIlN5c3RlbSI6IlVua25vd24iLCJleHAiOjE3Nzc4NzEwMjl9.HQbRA7RH_wmvOAiy6p4tM141HLxcck5-YsbWqLwnQJA
+#EXTINF:-1,Нафталин FM
+https://radiorecord.hostingradio.ru/naft96.aacp
+#EXTINF:-1,Дискотека СССР
+https://srv11.gpmradio.ru:8443/stream/pro/aac/64/144
+#EXTINF:-1,СССР 50-70
+https://srv11.gpmradio.ru:8443/stream/pro/aac/64/47
+#EXTINF:-1,ВИА
+https://srv11.gpmradio.ru:8443/stream/pro/aac/64/36
+#EXTINF:-1,Ретро Хит
+http://air.volna.top/Retro
+#EXTINF:-1,Дискотека 80-х
+https://srv11.gpmradio.ru:8443/stream/pro/aac/64/1
+#EXTINF:-1,Record 80-х
+https://radiorecord.hostingradio.ru/198096.aacp
+#EXTINF:-1,Italo Disco
+https://srv11.gpmradio.ru:8443/stream/pro/aac/64/161
+#EXTINF:-1,Россия 90-х
+https://srv11.gpmradio.ru:8443/stream/pro/aac/64/33
+#EXTINF:-1,Супердискотека 90-х
+https://radiorecord.hostingradio.ru/sd9096.aacp
+#EXTINF:-1,Eurodance
+https://radiorecord.hostingradio.ru/eurodance96.aacp
+#EXTINF:-1,Русский рок
+https://srv11.gpmradio.ru:8443/stream/pro/aac/64/42
+#EXTINF:-1,Король и Шут
+https://srv11.gpmradio.ru:8443/stream/pro/aac/64/191
+#EXTINF:-1,Медляк FM
+https://radiorecord.hostingradio.ru/mdl96.aacp
+#EXTINF:-1,Симфония FM
+https://radiorecord.hostingradio.ru/symph96.aacp
+#EXTINF:-1,Советская эстрада
+https://evcast.mediacp.eu:2075/stream
+#EXTINF:-1,СССР
+https://myradio24.org/ussr
+#EXTINF:-1,Всесоюзное
+https://radio-kolibri.ru:1045/stream
+#EXTINF:-1,Родные Песни
+https://rodpesni.amgradio.ru/rp
+#EXTINF:-1,Русское Кино
+https://rr-russkoekino.hostingradio.ru/russkoekino96.aacp
+#EXTINF:-1,Забытая кассета
+https://casseta-disco.ru:6270/stream
+#EXTINF:-1,Monte Carlo
+https://montecarlo.hostingradio.ru/montecarlo128.mp3

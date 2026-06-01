@@ -328,14 +328,21 @@ let playing = false;
 let currentUrl = localStorage.getItem('lastStationUrl') || DEFAULT_STATIONS[0].url;
 
 // Reconnect state
+const isMobile = matchMedia('(pointer: coarse), (max-width: 768px)').matches;
 let retryCount = 0;
 let retryTimer = null;
 let stallTimer = null;
+let softReconnectTimer = null;
 let lastBufEnd = -1;
-const MAX_RETRIES = 8;
-const BASE_RETRY_MS = 1500;
+let currentAttemptUrl = '';
+let currentFallbackIndex = 0;
+const MAX_RETRIES = isMobile ? 12 : 8;
+const BASE_RETRY_MS = isMobile ? 3000 : 1500;
+const SOFT_RECONNECT_MS = isMobile ? 18000 : 10000;
+const FALLBACK_AFTER_RETRIES = isMobile ? 4 : 5;
 
 const audio = document.getElementById('audio');
+audio.preload = 'none';
 const listEl = document.getElementById('stationsList');
 const npTitle = document.getElementById('npTitle');
 const freqBadge = document.getElementById('freqBadge');
@@ -375,12 +382,45 @@ volSlider.oninput = () => {
 // Init icon state
 volSlider.oninput();
 
+function getBitrate(station) {
+  const match = String(station.fmt || '').match(/(\d+)/);
+  return match ? Number(match[1]) : 128;
+}
+
+function isMobileFriendly(station) {
+  const fmt = String(station.fmt || '').toLowerCase();
+  return getBitrate(station) <= 96 || fmt.includes('aac');
+}
+
+function getCurrentStation() {
+  const all = [...DEFAULT_STATIONS, ...custom];
+  return all.find(st => st.url === currentUrl) || DEFAULT_STATIONS[0];
+}
+
+function getPlaybackUrls(station) {
+  const urls = [station.url, ...(station.fallbackUrls || [])];
+  return [...new Set(urls.filter(Boolean))];
+}
+
+function getEmergencyFallbackStation() {
+  const candidates = [...DEFAULT_STATIONS, ...custom]
+    .filter(st => st.url !== currentUrl && isMobileFriendly(st))
+    .sort((a, b) => getBitrate(a) - getBitrate(b));
+  return candidates[0] || null;
+}
+
 function getStations() {
   let all = [...DEFAULT_STATIONS, ...custom].map(s => ({
     ...s,
     isFav: favorites.includes(s.url)
   }));
-  return all.sort((a, b) => b.isFav - a.isFav);
+  return all.sort((a, b) => {
+    if (b.isFav !== a.isFav) return b.isFav - a.isFav;
+    if (isMobile && isMobileFriendly(a) !== isMobileFriendly(b)) {
+      return Number(isMobileFriendly(b)) - Number(isMobileFriendly(a));
+    }
+    return 0;
+  });
 }
 
 function render() {
@@ -438,8 +478,7 @@ function render() {
 }
 
 function updateNP() {
-  const all = [...DEFAULT_STATIONS, ...custom];
-  const s = all.find(st => st.url === currentUrl) || DEFAULT_STATIONS[0];
+  const s = getCurrentStation();
   npTitle.textContent = s.name;
   freqBadge.textContent = s.fmt || '128k MP3';
 }
@@ -452,6 +491,7 @@ function setStatus(txt, isPlaying) {
 
 function clearTimers() {
   clearTimeout(retryTimer);
+  clearTimeout(softReconnectTimer);
   clearInterval(stallTimer);
 }
 
@@ -536,6 +576,131 @@ document.getElementById('btnNext').onclick = () => {
   currentUrl = STATIONS[idx].url;
   if(playing) start(); else render();
 };
+
+function setAudioSource(src) {
+  if (audio.src !== src) audio.src = src;
+  currentAttemptUrl = src;
+}
+
+function stopAfterError() {
+  setStatus('ERROR', false);
+  playing = false;
+  btnPlay.classList.remove('playing');
+  playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+  playLabel.textContent = 'ЭФИР';
+  render();
+}
+
+function requestSoftReconnect(statusMsg) {
+  if (!playing) return;
+  setStatus(statusMsg || 'BUFFER...', true);
+  if (softReconnectTimer) return;
+  softReconnectTimer = setTimeout(() => {
+    softReconnectTimer = null;
+    if (!playing || audio.readyState >= 3 || !navigator.onLine) return;
+    scheduleReconnect('RECONNECT');
+  }, SOFT_RECONNECT_MS);
+}
+
+function startStallWatchdog() {
+  clearInterval(stallTimer);
+  lastBufEnd = -1;
+  stallTimer = setInterval(() => {
+    if (!playing) return;
+    const buf = audio.buffered.length > 0 ? audio.buffered.end(audio.buffered.length - 1) : -1;
+    if (buf === lastBufEnd && !audio.paused && audio.readyState < 3) {
+      requestSoftReconnect('BUFFER...');
+    }
+    lastBufEnd = buf;
+  }, 7000);
+}
+
+function scheduleReconnect(statusMsg) {
+  if (!playing) return;
+  if (statusMsg && (statusMsg.includes('STALL') || statusMsg.includes('BUFFER'))) {
+    requestSoftReconnect(statusMsg);
+    return;
+  }
+  clearTimeout(retryTimer);
+  clearTimeout(softReconnectTimer);
+  if (!navigator.onLine) {
+    setStatus('OFFLINE', true);
+    return;
+  }
+
+  const station = getCurrentStation();
+  const urls = getPlaybackUrls(station);
+  if (retryCount > 0 && retryCount % FALLBACK_AFTER_RETRIES === 0 && currentFallbackIndex < urls.length - 1) {
+    currentFallbackIndex++;
+  }
+
+  const nextUrl = urls[currentFallbackIndex] || currentUrl;
+  const delay = Math.min(BASE_RETRY_MS * Math.pow(1.45, retryCount), 45000);
+  retryCount++;
+  setStatus(statusMsg || 'RECONNECT', true);
+  retryTimer = setTimeout(() => {
+    if (!playing) return;
+    audio.src = '';
+    audio.load();
+    setAudioSource(nextUrl);
+    audio.play().catch(() => {
+      if (retryCount < MAX_RETRIES) {
+        scheduleReconnect('RETRY...');
+      } else {
+        const fallbackStation = getEmergencyFallbackStation();
+        if (fallbackStation) {
+          currentUrl = fallbackStation.url;
+          localStorage.setItem('lastStationUrl', currentUrl);
+          start();
+        } else {
+          stopAfterError();
+        }
+      }
+    });
+    startStallWatchdog();
+  }, delay);
+}
+
+function start() {
+  clearTimers();
+  retryCount = 0;
+  currentFallbackIndex = 0;
+  setAudioSource(currentUrl);
+  playing = true;
+  btnPlay.classList.add('playing');
+  playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+  playLabel.textContent = 'СТОП';
+  setStatus('BUFFER...', true);
+  audio.play().catch(() => scheduleReconnect('RECONNECT'));
+  startStallWatchdog();
+  render();
+}
+
+function stop() {
+  clearTimers();
+  audio.pause();
+  audio.src = '';
+  playing = false;
+  retryCount = 0;
+  currentFallbackIndex = 0;
+  btnPlay.classList.remove('playing');
+  playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+  playLabel.textContent = 'ЭФИР';
+  setStatus('СТОП', false);
+  render();
+}
+
+audio.addEventListener('canplay', () => { clearTimeout(softReconnectTimer); softReconnectTimer = null; });
+audio.addEventListener('stalled', () => { if (playing) requestSoftReconnect('STALL...'); });
+window.addEventListener('offline', () => { if (playing) setStatus('OFFLINE', true); });
+window.addEventListener('online', () => {
+  if (!playing) return;
+  clearTimers();
+  retryTimer = setTimeout(() => scheduleReconnect('RECONNECT'), 2500);
+});
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && playing && audio.paused) scheduleReconnect('RECONNECT');
+});
 
 // VU Meter logic
 const vuL = document.getElementById('vuL');
